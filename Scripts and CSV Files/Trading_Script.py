@@ -4,6 +4,11 @@ from datetime import datetime
 import os
 import numpy as np
 import argparse
+from pathlib import Path
+import sys
+
+sys.path.append("Scripts and CSV Files")
+from Generate_Graph import generate_graph
 
 # === Process one AI's portfolio ===
 def process_portfolio(portfolio, starting_cash):
@@ -259,6 +264,11 @@ def main():
     portfolio_df = pd.read_csv(args.portfolio)
     process_portfolio(portfolio_df, args.cash)
     daily_results(portfolio_df)
+
+    graphs_dir = Path("graphs")
+    graphs_dir.mkdir(exist_ok=True)
+    graph_file = graphs_dir / f"performance_{today}.png"
+    generate_graph(graph_file.as_posix(), show=False)
 
 
 if __name__ == "__main__":

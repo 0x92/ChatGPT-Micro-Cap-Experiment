@@ -2,219 +2,17 @@ import yfinance as yf
 import pandas as pd
 from datetime import datetime
 import os
-import numpy as np
 import argparse
 from pathlib import Path
 import sys
-import asyncio
+
+from src.portfolio import Portfolio
 
 sys.path.append("Scripts and CSV Files")
 
 from Generate_Graph import generate_graph
 
 
-async def _fetch_history(ticker):
-    """Fetch daily history for a single ticker in a background thread."""
-    data = await asyncio.to_thread(yf.Ticker(ticker).history, period="1d")
-    return ticker, data
-
-
-async def _download_all(tickers):
-    """Download daily history for all tickers concurrently."""
-    tasks = [_fetch_history(t) for t in tickers]
-    results = await asyncio.gather(*tasks)
-    return {t: data for t, data in results}
-
-
-# === Process one AI's portfolio ===
-def process_portfolio(portfolio, starting_cash):
-    if isinstance(portfolio, str):
-        portfolio = pd.read_csv(portfolio)
-
-    tickers = portfolio["ticker"].tolist()
-    price_map = asyncio.run(_download_all(tickers))
-
-    results = []
-    total_value = 0
-    total_pnl = 0
-    cash = starting_cash
-    for _, stock in portfolio.iterrows():
-        ticker = stock["ticker"]
-        shares = int(stock["shares"])
-        cost = stock["buy_price"]
-        stop = stock["stop_loss"]
-        data = price_map.get(ticker, pd.DataFrame())
-
-        if data.empty:
-            print(f"Warning: no price history for {ticker}, skipping")
-            continue
-        else:
-            price = round(data["Close"].iloc[-1], 2)
-            value = round(price * shares, 2)
-            pnl = round((price - cost) * shares, 2)
-
-            if price <= stop:
-                action = "SELL - Stop Loss Triggered"
-                cash += value
-                log_sell( ticker, shares, price, cost, pnl, action)
-            else:
-                action = "HOLD"
-                total_value += value
-                total_pnl += pnl
-
-            row = {
-                "Date": today,
-                "Ticker": ticker,
-                "Shares": shares,
-                "Cost Basis": cost,
-                "Stop Loss": stop,
-                "Current Price": price,
-                "Total Value": value,
-                "PnL": pnl,
-                "Action": action,
-                "Cash Balance": "",
-                "Total Equity": ""
-            }
-
-        results.append(row)
-
-    # === Add TOTAL row ===
-    total_row = {
-        "Date": today,
-        "Ticker": "TOTAL",
-        "Shares": "",
-        "Cost Basis": "",
-        "Stop Loss": "",
-        "Current Price": "",
-        "Total Value": round(total_value, 2),
-        "PnL": round(total_pnl, 2),
-        "Action": "",
-        "Cash Balance": round(cash, 2),
-        "Total Equity": round(total_value + cash, 2)
-    }
-    results.append(total_row)
-
-    # === Save to CSV ===
-    file = f"Scripts and CSV Files/chatgpt_portfolio_update.csv"
-    df = pd.DataFrame(results)
-
-    if os.path.exists(file):
-        existing = pd.read_csv(file)
-        existing = existing[existing["Date"] != today]  # Remove today's rows
-        df = pd.concat([existing, df], ignore_index=True)
-
-    df.to_csv(file, index=False)
-    return file
-
-# === Trade Logger (purely for stoplosses)===
-def log_sell( ticker, shares, price, cost, pnl):
-    log = {
-        "Date": today,
-        "Ticker": ticker,
-        "Shares Sold": shares,
-        "Sell Price": price,
-        "Cost Basis": cost,
-        "PnL": pnl,
-        "Reason": "AUTOMATED SELL - STOPLOSS TRIGGERED"
-    }
-
-    file = f"Scripts and CSV Files/chatgpt_trade_log.csv"
-    if os.path.exists(file):
-        df = pd.read_csv(file)
-        df = pd.concat([df, pd.DataFrame([log])], ignore_index=True)
-    else:
-        df = pd.DataFrame([log])
-    df.to_csv(file, index=False)
-
-# === Manual Buy Logger ===
-
-def log_manual_buy(buy_price, shares, ticker, cash, stoploss, chatgpt_portfolio):
-    check = input(f"""You are currently trying to buy {ticker}.
-                   If this a mistake enter 1.""")
-    if check == "1":
-        raise SystemExit("Please remove this function call.")
-
-    data = yf.download(ticker, period="1d")
-    if data.empty:
-        SystemExit(f"error, could not find ticker {ticker}")
-    if buy_price * shares > cash:
-        SystemExit(f"error, you have {cash} but are trying to spend {buy_price * shares}. Are you sure you can do this?")
-    pnl = 0.0
-
-    log = {
-            "Date": today,
-            "Ticker": ticker,
-            "Shares Bought": shares,
-            "Buy Price": buy_price,
-            "Cost Basis": buy_price * shares,
-            "PnL": pnl,
-            "Reason": "MANUAL BUY - New position"
-            }
-
-    file = "Scripts and CSV Files/chatgpt_trade_log.csv"
-    if os.path.exists(file):
-        df = pd.read_csv(file)
-        df = pd.concat([df, pd.DataFrame([log])], ignore_index=True)
-    else:
-        df = pd.DataFrame([log])
-    df.to_csv(file, index=False)
-    new_trade = {"ticker": ticker, "shares": shares, "stop_loss": stoploss,
-                "buy_price": buy_price, "cost_basis": buy_price * shares}
-    new_trade = pd.DataFrame([new_trade])
-    chatgpt_portfolio = pd.concat([chatgpt_portfolio, new_trade], ignore_index=True)
-    cash = cash - shares * buy_price
-    return cash, chatgpt_portfolio
-
-
-#work in progress currently
-
-def log_manual_sell(sell_price, shares_sold, ticker, cash, chatgpt_portfolio):
-    if isinstance(chatgpt_portfolio, list):
-        chatgpt_portfolio = pd.DataFrame(chatgpt_portfolio)
-    if ticker not in chatgpt_portfolio["ticker"].values:
-        raise KeyError(f"error, could not find {ticker} in portfolio")
-    ticker_row = chatgpt_portfolio[chatgpt_portfolio['ticker'] == ticker]
-
-    total_shares = int(ticker_row['shares'].item())
-    if shares_sold > total_shares:
-        raise ValueError(f"You are trying to sell {shares_sold} but only own {total_shares}.")
-    
-    buy_price = float(ticker_row['buy_price'].item())
-    
-    reason = input("""Why are you selling? 
-If this is a mistake, enter 1. """)
-
-    if reason == "1": 
-        raise SystemExit("Delete this function call from the program.")
-    cost_basis = buy_price * shares_sold
-    PnL = sell_price * shares_sold - cost_basis
-    # leave buy fields empty
-    log = {
-        "Date": today,
-        "Ticker": ticker,
-        "Shares Bought": "",
-        "Buy Price": "",
-        "Cost Basis": cost_basis,
-        "PnL": PnL,
-        "Reason": f"MANUAL SELL - {reason}",
-        "Shares Sold": shares_sold,
-        "Sell Price": sell_price
-    }
-    file = "Scripts and CSV Files/chatgpt_trade_log.csv"
-    if os.path.exists(file):
-        df = pd.read_csv(file)
-        df = pd.concat([df, pd.DataFrame([log])], ignore_index=True)
-    else:
-        df = pd.DataFrame([log])
-    df.to_csv(file, index=False) #check if ticker shares sold = total shares, if yes delete that row
-    if total_shares == shares_sold:
-        chatgpt_portfolio = chatgpt_portfolio[chatgpt_portfolio["ticker"] != ticker]
-    else:
-        ticker_row['shares'] = total_shares - shares_sold
-        ticker_row['cost_basis'] = ticker_row['shares'] * ticker_row['buy_price']
-        #return updated cash and updated portfolio
-    cash = cash + shares_sold * sell_price
-    return cash, chatgpt_portfolio
 
 # This is where chatGPT gets daily updates from
 # I give it data on its portfolio and also other tickers if requested
@@ -281,7 +79,8 @@ def main():
     args = parser.parse_args()
 
     portfolio_df = pd.read_csv(args.portfolio)
-    process_portfolio(portfolio_df, args.cash)
+    portfolio = Portfolio(today=today)
+    portfolio.process(portfolio_df, args.cash)
     daily_results(portfolio_df)
 
     graphs_dir = Path("graphs")

@@ -59,6 +59,14 @@ Matplotlib for visualizations
 
 ChatGPT 4o for decision-making
 
+## Setup
+
+```bash
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+```
+
 # Follow Along
 The experiment runs June 2025 to December 2025.
 Every trading day I will update the portfolio CSV file.

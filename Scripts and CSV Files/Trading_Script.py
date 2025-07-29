@@ -2,7 +2,9 @@ import yfinance as yf
 import pandas as pd
 from datetime import datetime
 import os
-import numpy as np 
+import numpy as np
+
+from Generate_Graph import save_performance_graph
 
 # === Process one AI's portfolio ===
 def process_portfolio(portfolio, starting_cash):
@@ -261,5 +263,7 @@ chatgpt_portfolio = pd.DataFrame(chatgpt_portfolio)
 # === TODO ===
 cash = 0.33
 
-# chatgpt_file = process_portfolio(chatgpt_portfolio, cash)
+# Run processing and generate graph
+chatgpt_file = process_portfolio(chatgpt_portfolio, cash)
+save_performance_graph("graphs/performance.png")
 daily_results(chatgpt_portfolio)

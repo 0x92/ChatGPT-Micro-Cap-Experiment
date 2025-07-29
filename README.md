@@ -41,7 +41,8 @@ LLM-powered decision engine — ChatGPT picks the trades
 
 Performance tracking — CSVs with daily PnL, total equity, and trade history
 
-Visualization tools — Matplotlib graphs comparing ChatGPT vs Index
+Visualization tools — Matplotlib graphs comparing ChatGPT vs Index. Generated
+PNGs are saved to the `graphs/` folder.
 
 Logs & trade data — Auto-saved logs for transparency
 
@@ -58,6 +59,8 @@ Pandas + yFinance for data & logic
 Matplotlib for visualizations
 
 ChatGPT 4o for decision-making
+
+The generated PNG graphs are stored in `graphs/`. Open them with any image viewer to track performance visually.
 
 # Follow Along
 The experiment runs June 2025 to December 2025.

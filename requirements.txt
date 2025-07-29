@@ -3,3 +3,4 @@ yfinance
 pytest
 numpy
 matplotlib
+Flask

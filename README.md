@@ -70,3 +70,11 @@ One final shameless plug: (https://substack.com/@nathanbsmith?utm_source=edit-pr
 
 Find a mistake in the logs or have advice?
 Please Reach out here: nathanbsmith.business@gmail.com
+
+## Example Usage
+
+Run the trading script with your portfolio CSV and starting cash:
+
+```bash
+python "Scripts and CSV Files/Trading_Script.py" --portfolio my_portfolio.csv --cash 100
+```

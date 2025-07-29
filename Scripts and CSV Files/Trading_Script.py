@@ -2,10 +2,14 @@ import yfinance as yf
 import pandas as pd
 from datetime import datetime
 import os
-import numpy as np 
+import numpy as np
+import argparse
 
 # === Process one AI's portfolio ===
 def process_portfolio(portfolio, starting_cash):
+    if isinstance(portfolio, str):
+        portfolio = pd.read_csv(portfolio)
+
     results = []
     total_value = 0
     total_pnl = 0
@@ -248,18 +252,27 @@ def daily_results(chatgpt_portfolio):
 
     
 
-# === Run Portfolio ===
-today = datetime.today().strftime('%Y-%m-%d')
-cash = 2.32
-chatgpt_portfolio = [
-    {"ticker": "ABEO", "shares": 6, "stop_loss": 4.90, "buy_price": 5.77, "cost_basis": 34.62},
-    {"ticker": "IINN", "shares": 14, "stop_loss": 1.10, "buy_price": 1.5, "cost_basis": 21},
-    {"ticker": "ACTU", "shares": 6, "stop_loss": 4.89, "buy_price": 5.75, "cost_basis": 34.5},
-    {"ticker": "ESPR", "shares": 15, "stop_loss": 1.10, "buy_price": 1.5, "cost_basis": 22.5},
-]
-chatgpt_portfolio = pd.DataFrame(chatgpt_portfolio)
-# === TODO ===
-cash = 0.33
+def main():
+    parser = argparse.ArgumentParser(description="Process portfolio updates")
+    parser.add_argument(
+        "--portfolio",
+        required=True,
+        help="Path to CSV with columns ticker, shares, stop_loss, buy_price",
+    )
+    parser.add_argument(
+        "--cash",
+        required=True,
+        type=float,
+        help="Starting cash value",
+    )
 
-# chatgpt_file = process_portfolio(chatgpt_portfolio, cash)
-daily_results(chatgpt_portfolio)
+    args = parser.parse_args()
+
+    portfolio_df = pd.read_csv(args.portfolio)
+    process_portfolio(portfolio_df, args.cash)
+    daily_results(portfolio_df)
+
+
+if __name__ == "__main__":
+    today = datetime.today().strftime("%Y-%m-%d")
+    main()

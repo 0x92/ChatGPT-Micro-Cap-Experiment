@@ -86,3 +86,7 @@ Run the trading script with your portfolio CSV and starting cash:
 ```bash
 python "Scripts and CSV Files/Trading_Script.py" --portfolio my_portfolio.csv --cash 100
 ```
+
+The trading script also saves a PNG graph under the `graphs/` directory each
+time it runs. Open the generated file with any image viewer to see the latest
+performance chart.

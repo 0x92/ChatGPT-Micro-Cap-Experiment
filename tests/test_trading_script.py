@@ -105,3 +105,40 @@ def test_process_portfolio_skips_empty(tmp_path, monkeypatch, capsys):
     total_row = df[df["Ticker"] == "TOTAL"].iloc[-1]
     assert total_row["Total Equity"] == pytest.approx(115.0)
     assert "Warning: no price history for AAA" in out
+
+
+def test_asyncio_gather_called(tmp_path, monkeypatch):
+    module = load_trading_module()
+    module.today = "2025-08-04"
+
+    class DummyTicker:
+        def __init__(self, ticker):
+            self.ticker = ticker
+        def history(self, period="1d"):
+            return pd.DataFrame({"Close": [1.0]})
+
+    monkeypatch.setattr(module.yf, "Ticker", DummyTicker)
+    monkeypatch.setattr(module, "log_sell", lambda *a, **k: None)
+
+    called = False
+    orig_gather = module.asyncio.gather
+
+    async def fake_gather(*tasks, **kwargs):
+        nonlocal called
+        called = True
+        return await orig_gather(*tasks, **kwargs)
+
+    monkeypatch.setattr(module.asyncio, "gather", fake_gather)
+
+    work = tmp_path / "async"
+    work.mkdir()
+    (work / "Scripts and CSV Files").mkdir()
+    monkeypatch.chdir(work)
+
+    portfolio = pd.DataFrame([
+        {"ticker": "AAA", "shares": 1, "stop_loss": 0.0, "buy_price": 1.0},
+        {"ticker": "BBB", "shares": 1, "stop_loss": 0.0, "buy_price": 1.0},
+    ])
+
+    module.process_portfolio(portfolio, 0.0)
+    assert called

@@ -6,14 +6,33 @@ import numpy as np
 import argparse
 from pathlib import Path
 import sys
+import asyncio
 
 sys.path.append("Scripts and CSV Files")
+
 from Generate_Graph import generate_graph
+
+
+async def _fetch_history(ticker):
+    """Fetch daily history for a single ticker in a background thread."""
+    data = await asyncio.to_thread(yf.Ticker(ticker).history, period="1d")
+    return ticker, data
+
+
+async def _download_all(tickers):
+    """Download daily history for all tickers concurrently."""
+    tasks = [_fetch_history(t) for t in tickers]
+    results = await asyncio.gather(*tasks)
+    return {t: data for t, data in results}
+
 
 # === Process one AI's portfolio ===
 def process_portfolio(portfolio, starting_cash):
     if isinstance(portfolio, str):
         portfolio = pd.read_csv(portfolio)
+
+    tickers = portfolio["ticker"].tolist()
+    price_map = asyncio.run(_download_all(tickers))
 
     results = []
     total_value = 0
@@ -24,7 +43,7 @@ def process_portfolio(portfolio, starting_cash):
         shares = int(stock["shares"])
         cost = stock["buy_price"]
         stop = stock["stop_loss"]
-        data = yf.Ticker(ticker).history(period="1d")
+        data = price_map.get(ticker, pd.DataFrame())
 
         if data.empty:
             print(f"Warning: no price history for {ticker}, skipping")

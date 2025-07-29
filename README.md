@@ -93,3 +93,13 @@ performance chart.
 If a ticker's price history can't be retrieved (for example if yfinance has no
 data), the program prints a warning and skips that symbol. Skipped tickers are
 not written to the daily portfolio CSV and are ignored when calculating totals.
+
+## Dashboard
+
+Start the Flask dashboard to view the portfolio, trade log, and latest graph:
+
+```bash
+python dashboard/app.py
+```
+
+Visit `http://localhost:5000/` in your browser.

@@ -70,3 +70,38 @@ def test_log_sell_appends(tmp_path, monkeypatch):
     assert len(df2) == 2
     assert df2.iloc[-1]["Ticker"] == "BBB"
     assert df2.iloc[0]["Date"] == first_date
+
+
+def test_process_portfolio_skips_empty(tmp_path, monkeypatch, capsys):
+    module = load_trading_module()
+    module.today = "2025-08-03"
+
+    class DummyTicker:
+        def __init__(self, ticker):
+            self.ticker = ticker
+        def history(self, period="1d"):
+            if self.ticker == "AAA":
+                return pd.DataFrame()
+            return pd.DataFrame({"Close": [3.0]})
+
+    monkeypatch.setattr(module.yf, "Ticker", DummyTicker)
+    monkeypatch.setattr(module, "log_sell", lambda *a, **k: None)
+
+    work = tmp_path / "skip"
+    work.mkdir()
+    (work / "Scripts and CSV Files").mkdir()
+    monkeypatch.chdir(work)
+
+    portfolio = pd.DataFrame([
+        {"ticker": "AAA", "shares": 10, "stop_loss": 5.0, "buy_price": 5.0},
+        {"ticker": "BBB", "shares": 5, "stop_loss": 2.0, "buy_price": 2.5},
+    ])
+
+    result_path = module.process_portfolio(portfolio, 100.0)
+    out = capsys.readouterr().out
+
+    df = pd.read_csv(result_path)
+    assert "AAA" not in df["Ticker"].values
+    total_row = df[df["Ticker"] == "TOTAL"].iloc[-1]
+    assert total_row["Total Equity"] == pytest.approx(115.0)
+    assert "Warning: no price history for AAA" in out

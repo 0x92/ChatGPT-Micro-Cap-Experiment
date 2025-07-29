@@ -22,20 +22,8 @@ def process_portfolio(portfolio, starting_cash):
         data = yf.Ticker(ticker).history(period="1d")
 
         if data.empty:
-            print(f"[ChatGPT] No data for {ticker}")
-            row = {
-                "Date": today,
-                "Ticker": ticker,
-                "Shares": shares,
-                "Cost Basis": cost,
-                "Stop Loss": stop,
-                "Current Price": "",
-                "Total Value": "",
-                "PnL": "",
-                "Action": "NO DATA",
-                "Cash Balance": "",
-                "Total Equity": ""
-            }
+            print(f"Warning: no price history for {ticker}, skipping")
+            continue
         else:
             price = round(data["Close"].iloc[-1], 2)
             value = round(price * shares, 2)

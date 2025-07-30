@@ -6,3 +6,5 @@ matplotlib
 aiohttp
 Flask
 requests
+schedule
+PyYAML

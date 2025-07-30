@@ -83,6 +83,17 @@ def run(portfolio_path: str, cash: float | None, config_path: str, *, today: str
     default_stop = config.get("default_stop_loss")
 
     portfolio_df = pd.read_csv(portfolio_path)
+    # Normalize common column names to match the expected lowercase format
+    rename_map = {
+        "Ticker": "ticker",
+        "Shares": "shares",
+        "Stop Loss": "stop_loss",
+        "Buy Price": "buy_price",
+        "Cost Basis": "cost_basis",
+    }
+    for old, new in rename_map.items():
+        if old in portfolio_df.columns and new not in portfolio_df.columns:
+            portfolio_df = portfolio_df.rename(columns={old: new})
     if default_stop is not None:
         if "stop_loss" not in portfolio_df.columns:
             portfolio_df["stop_loss"] = default_stop

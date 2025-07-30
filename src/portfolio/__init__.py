@@ -31,6 +31,18 @@ class Portfolio:
         if isinstance(portfolio, str):
             portfolio = pd.read_csv(portfolio)
 
+        # Normalize column names if they come from a daily update CSV
+        rename_map = {
+            "Ticker": "ticker",
+            "Shares": "shares",
+            "Stop Loss": "stop_loss",
+            "Buy Price": "buy_price",
+            "Cost Basis": "cost_basis",
+        }
+        for old, new in rename_map.items():
+            if old in portfolio.columns and new not in portfolio.columns:
+                portfolio = portfolio.rename(columns={old: new})
+
         tickers = portfolio["ticker"].tolist()
         price_map = asyncio.run(self._download_all(tickers))
 

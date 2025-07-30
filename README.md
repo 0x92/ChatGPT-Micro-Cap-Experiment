@@ -103,3 +103,27 @@ python dashboard/app.py
 ```
 
 Visit `http://localhost:5000/` in your browser.
+
+## Automating Daily Runs
+
+Use `daily_run.py` to schedule `Trading_Script.py` every day.
+
+```bash
+python daily_run.py --portfolio my_portfolio.csv --cash 100 --time 09:00
+```
+
+### Background execution
+
+Keep the scheduler running even after you close the terminal:
+
+```bash
+nohup python daily_run.py --portfolio my_portfolio.csv --cash 100 --time 09:00 &
+```
+
+### Cron example
+
+Add this to your crontab to start at boot:
+
+```
+@reboot /usr/bin/python /path/to/daily_run.py --portfolio /path/to/my_portfolio.csv --cash 100 --time 09:00 >> /path/to/trade.log 2>&1
+```

@@ -102,6 +102,9 @@ Please Reach out here: nathanbsmith.business@gmail.com
 
 ## Example Usage
 
+Running `python main.py` with no arguments will automatically launch the
+dashboard and a daily trading scheduler using the defaults from `config.yaml`.
+
 Run the trading script with your portfolio CSV and starting cash:
 
 ```bash

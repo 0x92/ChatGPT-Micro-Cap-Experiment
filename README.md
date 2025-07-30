@@ -176,3 +176,6 @@ Add this to your crontab to start at boot:
 ```
 @reboot /usr/bin/python /path/to/daily_run.py --portfolio /path/to/my_portfolio.csv --cash 100 --time 09:00 >> /path/to/trade.log 2>&1
 ```
+
+## Disclaimer
+All content in this repository is provided for educational purposes only and does not constitute financial advice. See [DISCLAIMER.md](DISCLAIMER.md) for more information.

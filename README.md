@@ -78,9 +78,12 @@ BROKER_BASE_URL=https://paper-api.alpaca.markets
 ```
 Environment variables take precedence over values in the file. This project uses the paper trading API only, so no real money is automatically traded.
 
-The `src.broker` module now exposes helper functions to interact with the
+The `src.broker` module exposes helper functions to interact with the
 Alpaca paper API. Use `place_order` to submit trades, `get_account` to fetch
-account details and `list_positions` to inspect open positions.
+account details and `list_positions` to inspect open positions. Additional
+helpers let you manage orders (`list_orders`, `cancel_order`, `cancel_all_orders`),
+view tradable assets via `list_assets`, and close positions with
+`close_position` or `close_all_positions`.
 
 
 # Follow Along

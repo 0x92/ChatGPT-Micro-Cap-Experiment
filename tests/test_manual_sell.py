@@ -2,10 +2,12 @@ import pandas as pd
 import pytest
 import pathlib
 import sys
+import json
 
 sys.path.append(str(pathlib.Path(__file__).resolve().parents[1]))
 
 from src.portfolio import Portfolio
+import dashboard.audit as audit_module
 
 
 def test_log_manual_sell_updates_portfolio(tmp_path, monkeypatch):
@@ -16,6 +18,9 @@ def test_log_manual_sell_updates_portfolio(tmp_path, monkeypatch):
     work.mkdir()
     (work / "Scripts and CSV Files").mkdir()
     monkeypatch.chdir(work)
+    audit_file = work / "audit.log"
+    audit_file.write_text("")
+    monkeypatch.setattr(audit_module, "LOG_FILE", audit_file)
 
     portfolio = pd.DataFrame([
         {"ticker": "AAA", "shares": 10, "stop_loss": 0.0, "buy_price": 2.0, "cost_basis": 20.0}
@@ -31,6 +36,8 @@ def test_log_manual_sell_updates_portfolio(tmp_path, monkeypatch):
     assert cash == pytest.approx(115.0)
     assert int(updated.iloc[0]["shares"]) == 5
     assert updated.iloc[0]["cost_basis"] == pytest.approx(10.0)
+    entries = [json.loads(l) for l in audit_file.read_text().splitlines() if l]
+    assert entries[-1]["action"] == "trade_sell"
 
 
 def test_log_manual_sell_too_many_shares(tmp_path, monkeypatch):
@@ -41,6 +48,9 @@ def test_log_manual_sell_too_many_shares(tmp_path, monkeypatch):
     work.mkdir()
     (work / "Scripts and CSV Files").mkdir()
     monkeypatch.chdir(work)
+    audit_file = work / "audit.log"
+    audit_file.write_text("")
+    monkeypatch.setattr(audit_module, "LOG_FILE", audit_file)
 
     portfolio = pd.DataFrame([
         {"ticker": "AAA", "shares": 4, "stop_loss": 0.0, "buy_price": 2.0, "cost_basis": 8.0}

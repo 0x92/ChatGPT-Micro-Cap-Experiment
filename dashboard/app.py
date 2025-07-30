@@ -3,6 +3,9 @@ import pandas as pd
 import yaml
 from dotenv import dotenv_values
 from pathlib import Path
+import shutil
+import io
+from datetime import datetime
 
 from src import bot_status
 from src.generate_graph import generate_graph
@@ -26,6 +29,39 @@ def show_portfolio():
     df = pd.read_csv(file_path)
     table = df.to_html(index=False, classes="table table-striped")
     return render_template("portfolio.html", table=table)
+
+
+@app.route("/portfolio/edit", methods=["GET", "POST"])
+def edit_portfolio():
+    """Upload or edit the portfolio CSV."""
+    file_path = CSV_DIR / "chatgpt_portfolio_update.csv"
+    backups = CSV_DIR / "backups"
+    csv_text = None
+    if request.method == "POST":
+        backups.mkdir(exist_ok=True)
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        if file_path.exists():
+            backup = backups / f"chatgpt_portfolio_update_{timestamp}.csv"
+            shutil.copy(file_path, backup)
+
+        uploaded = request.files.get("file")
+        if uploaded and uploaded.filename:
+            df = pd.read_csv(uploaded)
+        else:
+            csv_text = request.form.get("csv_text", "")
+            df = pd.read_csv(io.StringIO(csv_text)) if csv_text.strip() else pd.DataFrame()
+        df.to_csv(file_path, index=False)
+        csv_text = df.to_csv(index=False)
+
+    if csv_text is None:
+        if file_path.exists():
+            csv_text = file_path.read_text()
+        else:
+            csv_text = ""
+
+    df_display = pd.read_csv(io.StringIO(csv_text)) if csv_text.strip() else pd.DataFrame()
+    table = df_display.to_html(index=False, classes="table table-striped") if not df_display.empty else ""
+    return render_template("portfolio_edit.html", table=table, csv_text=csv_text)
 
 @app.route("/log")
 def show_log():

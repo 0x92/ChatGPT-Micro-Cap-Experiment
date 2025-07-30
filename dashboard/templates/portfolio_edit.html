@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Edit Portfolio CSV</h1>
+<form method="post" enctype="multipart/form-data" class="space-y-4">
+  <div>
+    <label class="block">Upload CSV</label>
+    <input type="file" name="file" class="border">
+  </div>
+  <div>
+    <label class="block">Edit CSV Data</label>
+    <textarea name="csv_text" rows="10" class="border w-full font-mono">{{ csv_text }}</textarea>
+  </div>
+  <button type="submit" class="bg-blue-500 text-white px-4 py-2">Save</button>
+</form>
+<hr class="my-4">
+{{ table | safe }}
+{% endblock %}

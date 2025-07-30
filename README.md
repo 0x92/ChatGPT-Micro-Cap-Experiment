@@ -68,6 +68,8 @@ ChatGPT 4o for decision-making
 python3 -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
+# If you see errors about missing packages such as `schedule`, make sure this
+# step completed successfully.
 ```
 Set up access to your brokerage API by either exporting credentials or creating a `.env` file.
 A sample `.env` is provided and automatically loaded when the `src.broker` module is imported:

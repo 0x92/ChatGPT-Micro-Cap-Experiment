@@ -3,7 +3,13 @@ import time
 
 from src import trading
 
-import schedule
+try:
+    import schedule
+except ImportError as exc:  # pragma: no cover - runtime import guard
+    raise ImportError(
+        "Missing optional dependency 'schedule'.\n"
+        "Install it with 'pip install schedule' or 'pip install -r requirements.txt'."
+    ) from exc
 
 
 def run_trading_script(portfolio: str, cash: float) -> None:

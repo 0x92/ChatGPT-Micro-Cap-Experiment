@@ -8,7 +8,7 @@ from unittest import mock
 
 import pytest
 
-from src.broker import place_order
+from src.broker import place_order, get_account, list_positions
 
 
 def test_place_order_makes_request(monkeypatch):
@@ -57,4 +57,60 @@ def test_portfolio_paper_buy_calls_broker(monkeypatch):
     assert recorded['qty'] == 3
     assert recorded['side'] == 'buy'
     assert result['ok']
+
+
+def test_get_account_makes_request(monkeypatch):
+    calls = {}
+
+    def fake_get(url, headers=None, timeout=10):
+        calls['url'] = url
+        calls['headers'] = headers
+
+        class Resp:
+            def raise_for_status(self):
+                pass
+
+            def json(self):
+                return {'equity': '1000'}
+
+        return Resp()
+
+    monkeypatch.setenv('BROKER_API_KEY', 'key')
+    monkeypatch.setenv('BROKER_SECRET_KEY', 'secret')
+    monkeypatch.setenv('BROKER_BASE_URL', 'http://example.com')
+    monkeypatch.setattr('src.broker.requests.get', fake_get)
+
+    result = get_account()
+
+    assert calls['url'] == 'http://example.com/v2/account'
+    assert calls['headers']['APCA-API-KEY-ID'] == 'key'
+    assert result['equity'] == '1000'
+
+
+def test_list_positions_makes_request(monkeypatch):
+    calls = {}
+
+    def fake_get(url, headers=None, timeout=10):
+        calls['url'] = url
+        calls['headers'] = headers
+
+        class Resp:
+            def raise_for_status(self):
+                pass
+
+            def json(self):
+                return [{'symbol': 'AAA'}]
+
+        return Resp()
+
+    monkeypatch.setenv('BROKER_API_KEY', 'key')
+    monkeypatch.setenv('BROKER_SECRET_KEY', 'secret')
+    monkeypatch.setenv('BROKER_BASE_URL', 'http://example.com')
+    monkeypatch.setattr('src.broker.requests.get', fake_get)
+
+    result = list_positions()
+
+    assert calls['url'] == 'http://example.com/v2/positions'
+    assert calls['headers']['APCA-API-KEY-ID'] == 'key'
+    assert result[0]['symbol'] == 'AAA'
 

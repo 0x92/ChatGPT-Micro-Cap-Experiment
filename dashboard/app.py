@@ -404,6 +404,8 @@ def show_status():
     return render_template("status.html", status=status)
 
 
+
+
 @app.route("/audit")
 def show_audit():
     """Display the audit log entries."""

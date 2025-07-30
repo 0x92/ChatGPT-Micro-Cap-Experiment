@@ -9,3 +9,4 @@ extra_tickers:
   - "^RUT"
   - "IWO"
   - "XBI"
+run_time: "09:00"

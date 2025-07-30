@@ -5,7 +5,6 @@ from threading import Thread
 
 from src import trading
 from dashboard.app import app as dashboard_app
-import daily_run
 
 
 DEFAULT_PORTFOLIO = "Scripts and CSV Files/chatgpt_portfolio_update.csv"
@@ -13,8 +12,7 @@ DEFAULT_PORTFOLIO = "Scripts and CSV Files/chatgpt_portfolio_update.csv"
 
 def _start_scheduler() -> None:
     """Run the daily scheduler in a background thread."""
-    sched = daily_run.build_daily_scheduler(DEFAULT_PORTFOLIO, cash=0.0)
-    daily_run.run_scheduler(sched)
+    dashboard_app.start_scheduler()
 
 
 def main() -> None:

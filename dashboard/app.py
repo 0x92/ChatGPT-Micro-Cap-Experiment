@@ -3,6 +3,9 @@ import pandas as pd
 import yaml
 from dotenv import dotenv_values
 from pathlib import Path
+from threading import Thread, Event
+import time
+import daily_run
 
 from src import bot_status
 from src.generate_graph import generate_graph
@@ -16,6 +19,57 @@ ENV_FILE = BASE_DIR / ".env"
 
 TEMPLATE_DIR = Path(__file__).resolve().parent / "templates"
 app = Flask(__name__, template_folder=TEMPLATE_DIR)
+
+# ---- Scheduler Management ----
+
+PORTFOLIO_FILE = CSV_DIR / "chatgpt_portfolio_update.csv"
+
+_scheduler_thread: Thread | None = None
+_scheduler_event: Event | None = None
+
+
+def _scheduler_loop(sched: 'schedule.Scheduler', stop_event: Event) -> None:
+    """Run pending jobs until ``stop_event`` is set."""
+    while not stop_event.is_set():
+        sched.run_pending()
+        time.sleep(60)
+
+
+def start_scheduler(run_time: str | None = None) -> None:
+    """Start the daily trading scheduler in a background thread."""
+    global _scheduler_thread, _scheduler_event
+
+    if run_time is None:
+        run_time = "09:00"
+        if CONFIG_FILE.exists():
+            with open(CONFIG_FILE) as f:
+                cfg = yaml.safe_load(f) or {}
+                run_time = cfg.get("run_time", run_time)
+
+    stop_event = Event()
+    sched = daily_run.build_daily_scheduler(
+        PORTFOLIO_FILE.as_posix(), cash=0.0, run_time=run_time
+    )
+    thread = Thread(target=_scheduler_loop, args=(sched, stop_event), daemon=True)
+    _scheduler_thread = thread
+    _scheduler_event = stop_event
+    thread.start()
+
+
+def stop_scheduler() -> None:
+    """Stop the running scheduler thread if active."""
+    global _scheduler_thread, _scheduler_event
+    if _scheduler_thread and _scheduler_event:
+        _scheduler_event.set()
+        _scheduler_thread.join()
+    _scheduler_thread = None
+    _scheduler_event = None
+
+
+def restart_scheduler(run_time: str) -> None:
+    """Restart the scheduler thread using ``run_time``."""
+    stop_scheduler()
+    start_scheduler(run_time)
 
 
 @app.route("/")
@@ -133,6 +187,27 @@ def config_page():
             cfg = yaml.safe_load(f) or {}
     env = dotenv_values(ENV_FILE)
     return render_template("config.html", config=cfg, env=env)
+
+
+@app.route("/scheduler", methods=["GET", "POST"])
+def scheduler_page():
+    """View and update the daily scheduler run time."""
+    run_time = "09:00"
+    cfg = {}
+    if CONFIG_FILE.exists():
+        with open(CONFIG_FILE) as f:
+            cfg = yaml.safe_load(f) or {}
+            run_time = cfg.get("run_time", run_time)
+
+    if request.method == "POST":
+        run_time = request.form.get("run_time", run_time)
+        cfg["run_time"] = run_time
+        with open(CONFIG_FILE, "w") as f:
+            yaml.safe_dump(cfg, f)
+        restart_scheduler(run_time)
+        return redirect(url_for("scheduler_page"))
+
+    return render_template("scheduler.html", run_time=run_time)
 
 
 @app.route("/status")

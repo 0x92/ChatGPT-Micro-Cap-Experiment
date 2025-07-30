@@ -1,4 +1,12 @@
-from flask import Flask, send_file, render_template, url_for, jsonify, request, redirect
+from flask import (
+    Flask,
+    send_file,
+    render_template,
+    url_for,
+    jsonify,
+    request,
+    redirect,
+)
 import pandas as pd
 import yaml
 from dotenv import dotenv_values
@@ -6,6 +14,9 @@ from pathlib import Path
 
 from src import bot_status
 from src.generate_graph import generate_graph
+from src.portfolio import Portfolio
+import builtins
+from datetime import datetime
 
 BASE_DIR = Path(__file__).resolve().parents[1]
 CSV_DIR = BASE_DIR / "Scripts and CSV Files"
@@ -133,6 +144,123 @@ def config_page():
             cfg = yaml.safe_load(f) or {}
     env = dotenv_values(ENV_FILE)
     return render_template("config.html", config=cfg, env=env)
+
+
+@app.route("/manual_buy", methods=["GET", "POST"])
+def manual_buy():
+    """Manually log a buy trade and refresh portfolio CSV."""
+    if request.method == "POST":
+        form = request.form
+        ticker = form.get("ticker", "").upper()
+        try:
+            shares = int(form.get("shares", "0"))
+            price = float(form.get("price", "0"))
+            stop = float(form.get("stop_loss", "0"))
+        except ValueError:
+            return "Invalid numeric values", 400
+
+        pf_file = CSV_DIR / "chatgpt_portfolio_update.csv"
+        if not pf_file.exists():
+            return "Portfolio file not found", 404
+        df = pd.read_csv(pf_file)
+        latest_date = df["Date"].max()
+        current = df[df["Date"] == latest_date].copy()
+        cash = 0.0
+        if not current.empty:
+            cash_row = current[current["Ticker"] == "TOTAL"]
+            if not cash_row.empty:
+                cash = float(cash_row["Cash Balance"].iloc[0])
+            current = current[current["Ticker"] != "TOTAL"]
+
+        current = current.rename(
+            columns={
+                "Ticker": "ticker",
+                "Shares": "shares",
+                "Stop Loss": "stop_loss",
+                "Cost Basis": "buy_price",
+            }
+        )
+        if not current.empty:
+            current["cost_basis"] = current["buy_price"] * current["shares"]
+
+        portfolio_obj = Portfolio(today=datetime.today().strftime("%Y-%m-%d"))
+        old_input = builtins.input
+        builtins.input = lambda *a, **k: "0"
+        try:
+            cash, updated = portfolio_obj.log_manual_buy(
+                price,
+                shares,
+                ticker,
+                cash,
+                stop,
+                current,
+            )
+        finally:
+            builtins.input = old_input
+
+        portfolio_obj.process(updated, cash)
+        return redirect(url_for("show_portfolio"))
+
+    return render_template("manual_buy.html")
+
+
+@app.route("/manual_sell", methods=["GET", "POST"])
+def manual_sell():
+    """Manually log a sell trade and refresh portfolio CSV."""
+    if request.method == "POST":
+        form = request.form
+        ticker = form.get("ticker", "").upper()
+        try:
+            shares = int(form.get("shares", "0"))
+            price = float(form.get("price", "0"))
+        except ValueError:
+            return "Invalid numeric values", 400
+
+        pf_file = CSV_DIR / "chatgpt_portfolio_update.csv"
+        if not pf_file.exists():
+            return "Portfolio file not found", 404
+        df = pd.read_csv(pf_file)
+        latest_date = df["Date"].max()
+        current = df[df["Date"] == latest_date].copy()
+        cash = 0.0
+        if not current.empty:
+            cash_row = current[current["Ticker"] == "TOTAL"]
+            if not cash_row.empty:
+                cash = float(cash_row["Cash Balance"].iloc[0])
+            current = current[current["Ticker"] != "TOTAL"]
+
+        current = current.rename(
+            columns={
+                "Ticker": "ticker",
+                "Shares": "shares",
+                "Stop Loss": "stop_loss",
+                "Cost Basis": "buy_price",
+            }
+        )
+        if not current.empty:
+            current["cost_basis"] = current["buy_price"] * current["shares"]
+
+        portfolio_obj = Portfolio(today=datetime.today().strftime("%Y-%m-%d"))
+        old_input = builtins.input
+        builtins.input = lambda *a, **k: "web"
+        try:
+            cash, updated = portfolio_obj.log_manual_sell(
+                price,
+                shares,
+                ticker,
+                cash,
+                current,
+            )
+        except (KeyError, ValueError) as exc:
+            builtins.input = old_input
+            return str(exc), 400
+        finally:
+            builtins.input = old_input
+
+        portfolio_obj.process(updated, cash)
+        return redirect(url_for("show_portfolio"))
+
+    return render_template("manual_sell.html")
 
 
 @app.route("/status")

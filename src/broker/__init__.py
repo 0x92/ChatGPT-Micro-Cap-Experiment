@@ -91,3 +91,75 @@ def list_positions() -> List[Dict[str, Any]]:
     response = requests.get(url, headers=_get_headers(), timeout=10)
     response.raise_for_status()
     return response.json()
+
+
+def list_assets(status: str | None = None, asset_class: str | None = None) -> List[Dict[str, Any]]:
+    """Return available assets from the brokerage API."""
+    url = f"{_base_url()}/v2/assets"
+    params = {}
+    if status:
+        params["status"] = status
+    if asset_class:
+        params["asset_class"] = asset_class
+    response = requests.get(url, headers=_get_headers(), params=params, timeout=10)
+    response.raise_for_status()
+    return response.json()
+
+
+def get_order(order_id: str) -> Dict[str, Any]:
+    """Return a specific order by its ID."""
+    url = f"{_base_url()}/v2/orders/{order_id}"
+    response = requests.get(url, headers=_get_headers(), timeout=10)
+    response.raise_for_status()
+    return response.json()
+
+
+def list_orders(status: str = "open", limit: int | None = None) -> List[Dict[str, Any]]:
+    """Return a list of orders from the brokerage API."""
+    url = f"{_base_url()}/v2/orders"
+    params = {"status": status}
+    if limit is not None:
+        params["limit"] = limit
+    response = requests.get(url, headers=_get_headers(), params=params, timeout=10)
+    response.raise_for_status()
+    return response.json()
+
+
+def cancel_order(order_id: str) -> Dict[str, Any]:
+    """Cancel an open order."""
+    url = f"{_base_url()}/v2/orders/{order_id}"
+    response = requests.delete(url, headers=_get_headers(), timeout=10)
+    response.raise_for_status()
+    return response.json()
+
+
+def cancel_all_orders() -> List[Dict[str, Any]]:
+    """Cancel all open orders."""
+    url = f"{_base_url()}/v2/orders"
+    response = requests.delete(url, headers=_get_headers(), timeout=10)
+    response.raise_for_status()
+    return response.json()
+
+
+def close_position(symbol: str) -> Dict[str, Any]:
+    """Close an open position by symbol."""
+    url = f"{_base_url()}/v2/positions/{symbol}"
+    response = requests.delete(url, headers=_get_headers(), timeout=10)
+    response.raise_for_status()
+    return response.json()
+
+
+def close_all_positions() -> List[Dict[str, Any]]:
+    """Close all open positions."""
+    url = f"{_base_url()}/v2/positions"
+    response = requests.delete(url, headers=_get_headers(), timeout=10)
+    response.raise_for_status()
+    return response.json()
+
+
+def get_clock() -> Dict[str, Any]:
+    """Return the current market clock."""
+    url = f"{_base_url()}/v2/clock"
+    response = requests.get(url, headers=_get_headers(), timeout=10)
+    response.raise_for_status()
+    return response.json()

@@ -72,10 +72,10 @@ pip install -r requirements.txt
 # step completed successfully.
 ```
 Set up access to your brokerage API by either exporting credentials or creating a `.env` file.
-A sample `.env` is provided and automatically loaded when the `src.broker` module is imported:
+Copy the provided `.env.example` to `.env` and add your Alpaca API credentials:
 ```bash
-BROKER_API_KEY=PKPE1ONZT041NZMFQ82G
-BROKER_SECRET_KEY=eWIrbJdu5rW0ApiZvlYE25AmxwkrVrMYIsqbDlyh
+BROKER_API_KEY=your_api_key
+BROKER_SECRET_KEY=your_secret_key
 BROKER_BASE_URL=https://paper-api.alpaca.markets
 ```
 Environment variables take precedence over values in the file. This project uses the paper trading API only, so no real money is automatically traded.

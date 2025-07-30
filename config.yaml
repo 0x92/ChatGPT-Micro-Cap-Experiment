@@ -9,4 +9,10 @@ extra_tickers:
   - "^RUT"
   - "IWO"
   - "XBI"
+
+# Optional notification settings
+# Set an email address or webhook URL to receive trade alerts
+email: ""
+webhook_url: ""
 run_time: "09:00"
+

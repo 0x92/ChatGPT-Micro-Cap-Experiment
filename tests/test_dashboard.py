@@ -67,7 +67,13 @@ def test_status_route(tmp_path, monkeypatch):
 def test_config_route_get_post(tmp_path, monkeypatch):
     csv_dir, graph_dir = _setup_files(tmp_path)
     cfg_file = tmp_path / "config.yaml"
-    cfg_file.write_text("default_cash: 50\ndefault_stop_loss: 0.1\nextra_tickers:\n- AAA\n")
+    cfg_file.write_text(
+        "default_cash: 50\n"
+        "default_stop_loss: 0.1\n"
+        "extra_tickers:\n- AAA\n"
+        "email: old@example.com\n"
+        "webhook_url: http://oldwebhook\n"
+    )
     env_file = tmp_path / ".env"
     env_file.write_text("BROKER_API_KEY=old\n")
 
@@ -86,6 +92,8 @@ def test_config_route_get_post(tmp_path, monkeypatch):
                 "default_cash": "75",
                 "default_stop_loss": "0.2",
                 "extra_tickers": "BBB,CCC",
+                "email": "new@example.com",
+                "webhook_url": "http://webhook",
                 "BROKER_API_KEY": "newkey",
                 "BROKER_SECRET_KEY": "secret",
                 "BROKER_BASE_URL": "http://example.com",
@@ -100,6 +108,8 @@ def test_config_route_get_post(tmp_path, monkeypatch):
     assert cfg["default_cash"] == 75.0
     assert cfg["default_stop_loss"] == 0.2
     assert cfg["extra_tickers"] == ["BBB", "CCC"]
+    assert cfg["email"] == "new@example.com"
+    assert cfg["webhook_url"] == "http://webhook"
 
     env_vals = dotenv_values(env_file)
     assert env_vals["BROKER_API_KEY"] == "newkey"

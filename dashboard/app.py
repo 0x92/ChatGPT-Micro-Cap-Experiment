@@ -4,6 +4,10 @@ import yaml
 from dotenv import dotenv_values
 from pathlib import Path
 
+import json
+from . import audit
+from .audit import record_change
+
 from src import bot_status
 from src.generate_graph import generate_graph
 
@@ -125,6 +129,12 @@ def config_page():
             for k, v in env_vals.items():
                 f.write(f"{k}={v}\n")
 
+        record_change(
+            user=request.remote_addr or "unknown",
+            action="config_update",
+            details={"config": config_data}
+        )
+
         return redirect(url_for("config_page"))
 
     cfg = {}
@@ -142,6 +152,20 @@ def show_status():
     if request.args.get("json"):
         return jsonify(status)
     return render_template("status.html", status=status)
+
+
+@app.route("/audit")
+def show_audit():
+    """Display the audit log entries."""
+    log_entries = []
+    if audit.LOG_FILE.exists():
+        with audit.LOG_FILE.open() as f:
+            for line in f:
+                try:
+                    log_entries.append(json.loads(line))
+                except json.JSONDecodeError:
+                    continue
+    return render_template("audit.html", entries=log_entries)
 
 if __name__ == "__main__":
     app.run(debug=True)

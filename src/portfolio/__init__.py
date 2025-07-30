@@ -113,6 +113,11 @@ class Portfolio:
             df = pd.concat([existing, df], ignore_index=True)
 
         df.to_csv(file, index=False)
+        try:
+            from dashboard.audit import record_change
+            record_change("system", "portfolio_update", {"file": file})
+        except Exception:
+            pass
         return file
 
     def log_sell(
@@ -183,6 +188,11 @@ class Portfolio:
         else:
             df = pd.DataFrame([log])
         df.to_csv(file, index=False)
+        try:
+            from dashboard.audit import record_change
+            record_change("manual", "trade_buy", log)
+        except Exception:
+            pass
 
         new_trade = {
             "ticker": ticker,
@@ -244,6 +254,11 @@ class Portfolio:
         else:
             df = pd.DataFrame([log])
         df.to_csv(file, index=False)
+        try:
+            from dashboard.audit import record_change
+            record_change("manual", "trade_sell", log)
+        except Exception:
+            pass
 
         if total_shares == shares_sold:
             chatgpt_portfolio = chatgpt_portfolio[chatgpt_portfolio["ticker"] != ticker]

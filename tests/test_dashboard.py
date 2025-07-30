@@ -24,13 +24,17 @@ def _setup_files(tmp_path):
     img = graph_dir / "perf.png"
     img.write_bytes(b"\x89PNG\r\n\x1a\n")
 
-    return csv_dir, graph_dir
+    audit_file = tmp_path / "audit.log"
+    audit_file.write_text("")
+
+    return csv_dir, graph_dir, audit_file
 
 
 def test_dashboard_routes(tmp_path, monkeypatch):
-    csv_dir, graph_dir = _setup_files(tmp_path)
+    csv_dir, graph_dir, audit_file = _setup_files(tmp_path)
     monkeypatch.setattr(app_module, "CSV_DIR", csv_dir)
     monkeypatch.setattr(app_module, "GRAPH_DIR", graph_dir)
+    monkeypatch.setattr(app_module.audit, "LOG_FILE", audit_file)
 
     with app.test_client() as client:
         assert client.get("/").status_code == 200
@@ -41,9 +45,10 @@ def test_dashboard_routes(tmp_path, monkeypatch):
 
 
 def test_status_route(tmp_path, monkeypatch):
-    csv_dir, graph_dir = _setup_files(tmp_path)
+    csv_dir, graph_dir, audit_file = _setup_files(tmp_path)
     monkeypatch.setattr(app_module, "CSV_DIR", csv_dir)
     monkeypatch.setattr(app_module, "GRAPH_DIR", graph_dir)
+    monkeypatch.setattr(app_module.audit, "LOG_FILE", audit_file)
     monkeypatch.setattr(app_module, "BOT_STATUS_FILE", tmp_path / "bot_status.json")
 
     def fake_status(file=None):
@@ -65,7 +70,7 @@ def test_status_route(tmp_path, monkeypatch):
 
 
 def test_config_route_get_post(tmp_path, monkeypatch):
-    csv_dir, graph_dir = _setup_files(tmp_path)
+    csv_dir, graph_dir, audit_file = _setup_files(tmp_path)
     cfg_file = tmp_path / "config.yaml"
     cfg_file.write_text("default_cash: 50\ndefault_stop_loss: 0.1\nextra_tickers:\n- AAA\n")
     env_file = tmp_path / ".env"
@@ -75,6 +80,7 @@ def test_config_route_get_post(tmp_path, monkeypatch):
     monkeypatch.setattr(app_module, "GRAPH_DIR", graph_dir)
     monkeypatch.setattr(app_module, "CONFIG_FILE", cfg_file)
     monkeypatch.setattr(app_module, "ENV_FILE", env_file)
+    monkeypatch.setattr(app_module.audit, "LOG_FILE", audit_file)
 
     with app.test_client() as client:
         resp = client.get("/config")
@@ -105,5 +111,9 @@ def test_config_route_get_post(tmp_path, monkeypatch):
     assert env_vals["BROKER_API_KEY"] == "newkey"
     assert env_vals["BROKER_SECRET_KEY"] == "secret"
     assert env_vals["BROKER_BASE_URL"] == "http://example.com"
+
+    import json
+    entries = [json.loads(l) for l in audit_file.read_text().splitlines() if l]
+    assert entries[-1]["action"] == "config_update"
 
 

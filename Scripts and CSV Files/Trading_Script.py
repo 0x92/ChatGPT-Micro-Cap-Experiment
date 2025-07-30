@@ -8,6 +8,14 @@ import sys
 import json
 import yaml
 
+STATUS_FILE = Path("bot_status.json")
+
+def _write_status(action: str) -> None:
+    """Write the last action message to ``bot_status.json``."""
+    data = {"last_action": action, "time": datetime.utcnow().isoformat()}
+    with STATUS_FILE.open("w") as f:
+        json.dump(data, f)
+
 from src.portfolio import Portfolio
 
 sys.path.append("Scripts and CSV Files")
@@ -118,6 +126,7 @@ def main():
     graphs_dir.mkdir(exist_ok=True)
     graph_file = graphs_dir / f"performance_{today}.png"
     generate_graph(graph_file.as_posix(), show=False)
+    _write_status("trading script executed")
 
 
 if __name__ == "__main__":

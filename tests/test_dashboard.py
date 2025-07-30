@@ -40,3 +40,27 @@ def test_dashboard_routes(tmp_path, monkeypatch):
         assert client.get("/overview").status_code == 200
 
 
+def test_status_route(tmp_path, monkeypatch):
+    csv_dir, graph_dir = _setup_files(tmp_path)
+    monkeypatch.setattr(app_module, "CSV_DIR", csv_dir)
+    monkeypatch.setattr(app_module, "GRAPH_DIR", graph_dir)
+    monkeypatch.setattr(app_module, "BOT_STATUS_FILE", tmp_path / "bot_status.json")
+
+    def fake_status(file=None):
+        return {
+            "timestamp": "now",
+            "equity": 100,
+            "positions": [],
+            "orders": [],
+            "last_action": "test",
+        }
+
+    monkeypatch.setattr(app_module.bot_status, "get_status", fake_status)
+
+    with app.test_client() as client:
+        assert client.get("/status").status_code == 200
+        resp = client.get("/status?json=1")
+        assert resp.is_json
+        assert resp.get_json()["equity"] == 100
+
+

@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Summary ({{ date }})</h1>
+<ul>
+  <li>Total Value: {{ total }}</li>
+  <li>PnL: {{ pnl }}</li>
+  <li>Cash Balance: {{ cash }}</li>
+  <li>Total Equity: {{ equity }}</li>
+</ul>
+{% endblock %}

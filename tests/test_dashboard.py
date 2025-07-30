@@ -133,4 +133,21 @@ def test_scheduler_route(tmp_path, monkeypatch):
     assert cfg["run_time"] == "10:30"
     assert started["time"] == "10:30"
 
+def test_portfolio_edit(tmp_path, monkeypatch):
+    csv_dir, graph_dir = _setup_files(tmp_path)
+    monkeypatch.setattr(app_module, "CSV_DIR", csv_dir)
+
+    with app.test_client() as client:
+        resp = client.get("/portfolio/edit")
+        assert resp.status_code == 200
+
+        new_csv = "Date,Ticker,Total Value\n2025-08-11,TOTAL,150\n"
+        resp = client.post("/portfolio/edit", data={"csv_text": new_csv})
+        assert resp.status_code == 200
+
+    saved = csv_dir / "chatgpt_portfolio_update.csv"
+    assert "150" in saved.read_text()
+    backups = list((csv_dir / "backups").glob("chatgpt_portfolio_update_*.csv"))
+    assert len(backups) == 1
+
 

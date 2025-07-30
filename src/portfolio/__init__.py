@@ -9,6 +9,7 @@ from typing import List, Dict, Any
 
 import pandas as pd
 import yfinance as yf
+from ..broker import place_order
 
 
 class Portfolio:
@@ -245,4 +246,12 @@ class Portfolio:
 
         cash = cash + shares_sold * sell_price
         return cash, chatgpt_portfolio
+
+    def paper_buy(self, ticker: str, qty: int, order_type: str = "market"):
+        """Place a paper buy order through the broker API."""
+        return place_order(ticker, qty, "buy", order_type)
+
+    def paper_sell(self, ticker: str, qty: int, order_type: str = "market"):
+        """Place a paper sell order through the broker API."""
+        return place_order(ticker, qty, "sell", order_type)
 

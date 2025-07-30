@@ -69,6 +69,15 @@ python3 -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
 ```
+Set up access to your brokerage API by exporting credentials before running the scripts:
+```bash
+export BROKER_API_KEY="<your-key>"
+export BROKER_SECRET_KEY="<your-secret>"
+# Optional: point to a different paper trading base URL
+export BROKER_BASE_URL="https://paper-api.alpaca.markets"
+```
+This project uses the paper trading API only, so no real money is automatically traded.
+
 
 # Follow Along
 The experiment runs June 2025 to December 2025.
@@ -97,9 +106,35 @@ If a ticker's price history can't be retrieved (for example if yfinance has no
 data), the program prints a warning and skips that symbol. Skipped tickers are
 not written to the daily portfolio CSV and are ignored when calculating totals.
 
+
 Cached price files are saved under `cache/` as pickles. The script checks this
 folder each day and only queries yfinance when the file for that ticker and
 date doesn't exist.
+
+### Configuration File
+
+You can store common settings in a `config.yaml` (or `.json`) file at the project
+root. Parameters defined here are used as defaults when running the trading
+script.
+
+Example `config.yaml`:
+
+```yaml
+default_cash: 100.0
+default_stop_loss: 0.05
+extra_tickers:
+  - "^RUT"
+  - "IWO"
+  - "XBI"
+```
+
+Run the script using the config (values provided on the command line override
+the file):
+
+```bash
+python "Scripts and CSV Files/Trading_Script.py" --portfolio my_portfolio.csv --config config.yaml
+```
+
 
 ## Dashboard
 
@@ -110,3 +145,27 @@ python dashboard/app.py
 ```
 
 Visit `http://localhost:5000/` in your browser.
+
+## Automating Daily Runs
+
+Use `daily_run.py` to schedule `Trading_Script.py` every day.
+
+```bash
+python daily_run.py --portfolio my_portfolio.csv --cash 100 --time 09:00
+```
+
+### Background execution
+
+Keep the scheduler running even after you close the terminal:
+
+```bash
+nohup python daily_run.py --portfolio my_portfolio.csv --cash 100 --time 09:00 &
+```
+
+### Cron example
+
+Add this to your crontab to start at boot:
+
+```
+@reboot /usr/bin/python /path/to/daily_run.py --portfolio /path/to/my_portfolio.csv --cash 100 --time 09:00 >> /path/to/trade.log 2>&1
+```

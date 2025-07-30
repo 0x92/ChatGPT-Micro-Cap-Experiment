@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Configuration</h1>
+<form method="post" class="space-y-4">
+  <div>
+    <label class="block">Default Cash</label>
+    <input type="text" name="default_cash" value="{{ config.default_cash }}" class="border px-2 py-1">
+  </div>
+  <div>
+    <label class="block">Default Stop Loss</label>
+    <input type="text" name="default_stop_loss" value="{{ config.default_stop_loss }}" class="border px-2 py-1">
+  </div>
+  <div>
+    <label class="block">Extra Tickers (comma separated)</label>
+    <input type="text" name="extra_tickers" value="{{ config.extra_tickers|join(',') }}" class="border px-2 py-1 w-full">
+  </div>
+  <h2 class="font-semibold">Broker Settings (optional)</h2>
+  <div>
+    <label class="block">BROKER_API_KEY</label>
+    <input type="text" name="BROKER_API_KEY" value="{{ env.BROKER_API_KEY }}" class="border px-2 py-1 w-full">
+  </div>
+  <div>
+    <label class="block">BROKER_SECRET_KEY</label>
+    <input type="text" name="BROKER_SECRET_KEY" value="{{ env.BROKER_SECRET_KEY }}" class="border px-2 py-1 w-full">
+  </div>
+  <div>
+    <label class="block">BROKER_BASE_URL</label>
+    <input type="text" name="BROKER_BASE_URL" value="{{ env.BROKER_BASE_URL }}" class="border px-2 py-1 w-full">
+  </div>
+  <button type="submit" class="bg-blue-500 text-white px-4 py-2">Save</button>
+</form>
+{% endblock %}

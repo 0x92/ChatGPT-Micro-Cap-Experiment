@@ -1,5 +1,7 @@
-from flask import Flask, send_file, render_template, url_for, jsonify, request
+from flask import Flask, send_file, render_template, url_for, jsonify, request, redirect
 import pandas as pd
+import yaml
+from dotenv import dotenv_values
 from pathlib import Path
 
 from src import bot_status
@@ -9,6 +11,8 @@ BASE_DIR = Path(__file__).resolve().parents[1]
 CSV_DIR = BASE_DIR / "Scripts and CSV Files"
 GRAPH_DIR = BASE_DIR / "graphs"
 BOT_STATUS_FILE = BASE_DIR / "bot_status.json"
+CONFIG_FILE = BASE_DIR / "config.yaml"
+ENV_FILE = BASE_DIR / ".env"
 
 TEMPLATE_DIR = Path(__file__).resolve().parent / "templates"
 app = Flask(__name__, template_folder=TEMPLATE_DIR)
@@ -89,6 +93,46 @@ def overview():
         cash=latest["Cash Balance"],
         equity=latest["Total Equity"],
     )
+
+
+@app.route("/config", methods=["GET", "POST"])
+def config_page():
+    """Display and update configuration settings."""
+    if request.method == "POST":
+        form = request.form
+        try:
+            default_cash = float(form.get("default_cash", ""))
+            default_stop = float(form.get("default_stop_loss", ""))
+        except ValueError:
+            return "Invalid numeric values", 400
+
+        tickers_raw = form.get("extra_tickers", "")
+        tickers = [t.strip() for t in tickers_raw.split(",") if t.strip()]
+
+        config_data = {
+            "default_cash": default_cash,
+            "default_stop_loss": default_stop,
+            "extra_tickers": tickers,
+        }
+        with open(CONFIG_FILE, "w") as f:
+            yaml.safe_dump(config_data, f)
+
+        env_vals = dotenv_values(ENV_FILE)
+        env_vals["BROKER_API_KEY"] = form.get("BROKER_API_KEY", "")
+        env_vals["BROKER_SECRET_KEY"] = form.get("BROKER_SECRET_KEY", "")
+        env_vals["BROKER_BASE_URL"] = form.get("BROKER_BASE_URL", "")
+        with open(ENV_FILE, "w") as f:
+            for k, v in env_vals.items():
+                f.write(f"{k}={v}\n")
+
+        return redirect(url_for("config_page"))
+
+    cfg = {}
+    if CONFIG_FILE.exists():
+        with open(CONFIG_FILE) as f:
+            cfg = yaml.safe_load(f) or {}
+    env = dotenv_values(ENV_FILE)
+    return render_template("config.html", config=cfg, env=env)
 
 
 @app.route("/status")

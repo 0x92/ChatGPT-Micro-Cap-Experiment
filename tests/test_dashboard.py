@@ -64,3 +64,46 @@ def test_status_route(tmp_path, monkeypatch):
         assert resp.get_json()["equity"] == 100
 
 
+def test_config_route_get_post(tmp_path, monkeypatch):
+    csv_dir, graph_dir = _setup_files(tmp_path)
+    cfg_file = tmp_path / "config.yaml"
+    cfg_file.write_text("default_cash: 50\ndefault_stop_loss: 0.1\nextra_tickers:\n- AAA\n")
+    env_file = tmp_path / ".env"
+    env_file.write_text("BROKER_API_KEY=old\n")
+
+    monkeypatch.setattr(app_module, "CSV_DIR", csv_dir)
+    monkeypatch.setattr(app_module, "GRAPH_DIR", graph_dir)
+    monkeypatch.setattr(app_module, "CONFIG_FILE", cfg_file)
+    monkeypatch.setattr(app_module, "ENV_FILE", env_file)
+
+    with app.test_client() as client:
+        resp = client.get("/config")
+        assert resp.status_code == 200
+
+        resp = client.post(
+            "/config",
+            data={
+                "default_cash": "75",
+                "default_stop_loss": "0.2",
+                "extra_tickers": "BBB,CCC",
+                "BROKER_API_KEY": "newkey",
+                "BROKER_SECRET_KEY": "secret",
+                "BROKER_BASE_URL": "http://example.com",
+            },
+        )
+        assert resp.status_code == 302
+
+    import yaml
+    from dotenv import dotenv_values
+
+    cfg = yaml.safe_load(cfg_file.read_text())
+    assert cfg["default_cash"] == 75.0
+    assert cfg["default_stop_loss"] == 0.2
+    assert cfg["extra_tickers"] == ["BBB", "CCC"]
+
+    env_vals = dotenv_values(env_file)
+    assert env_vals["BROKER_API_KEY"] == "newkey"
+    assert env_vals["BROKER_SECRET_KEY"] == "secret"
+    assert env_vals["BROKER_BASE_URL"] == "http://example.com"
+
+

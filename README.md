@@ -66,6 +66,15 @@ python3 -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
 ```
+Set up access to your brokerage API by exporting credentials before running the scripts:
+```bash
+export BROKER_API_KEY="<your-key>"
+export BROKER_SECRET_KEY="<your-secret>"
+# Optional: point to a different paper trading base URL
+export BROKER_BASE_URL="https://paper-api.alpaca.markets"
+```
+This project uses the paper trading API only, so no real money is automatically traded.
+
 
 # Follow Along
 The experiment runs June 2025 to December 2025.

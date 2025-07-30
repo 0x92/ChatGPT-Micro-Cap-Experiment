@@ -113,6 +113,8 @@ def config_page():
             "default_cash": default_cash,
             "default_stop_loss": default_stop,
             "extra_tickers": tickers,
+            "email": form.get("email", ""),
+            "webhook_url": form.get("webhook_url", ""),
         }
         with open(CONFIG_FILE, "w") as f:
             yaml.safe_dump(config_data, f)

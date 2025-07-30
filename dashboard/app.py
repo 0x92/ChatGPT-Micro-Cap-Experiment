@@ -1,17 +1,14 @@
 from flask import Flask, send_file, render_template, url_for, jsonify, request
 import pandas as pd
 from pathlib import Path
-import sys
 
 from src import bot_status
+from src.generate_graph import generate_graph
 
 BASE_DIR = Path(__file__).resolve().parents[1]
 CSV_DIR = BASE_DIR / "Scripts and CSV Files"
 GRAPH_DIR = BASE_DIR / "graphs"
 BOT_STATUS_FILE = BASE_DIR / "bot_status.json"
-
-sys.path.append(str(CSV_DIR))
-from Generate_Graph import generate_graph
 
 TEMPLATE_DIR = Path(__file__).resolve().parent / "templates"
 app = Flask(__name__, template_folder=TEMPLATE_DIR)

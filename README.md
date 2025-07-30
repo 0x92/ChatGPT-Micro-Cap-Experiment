@@ -103,7 +103,7 @@ Please Reach out here: nathanbsmith.business@gmail.com
 Run the trading script with your portfolio CSV and starting cash:
 
 ```bash
-python "Scripts and CSV Files/Trading_Script.py" --portfolio my_portfolio.csv --cash 100
+python main.py trade --portfolio my_portfolio.csv --cash 100
 ```
 
 The trading script also saves a PNG graph under the `graphs/` directory each
@@ -139,7 +139,7 @@ Run the script using the config (values provided on the command line override
 the file):
 
 ```bash
-python "Scripts and CSV Files/Trading_Script.py" --portfolio my_portfolio.csv --config config.yaml
+python main.py trade --portfolio my_portfolio.csv --config config.yaml
 ```
 
 
@@ -149,7 +149,7 @@ Start the Flask dashboard to view the portfolio, trade log, performance graph,
 and a quick summary of the latest totals:
 
 ```bash
-python dashboard/app.py
+python main.py dashboard
 ```
 
 Visit `http://localhost:5000/` in your browser. Use the navigation links at the
@@ -158,10 +158,10 @@ views.
 
 ## Automating Daily Runs
 
-Use `daily_run.py` to schedule `Trading_Script.py` every day.
+Use the scheduler to run the trading script every day.
 
 ```bash
-python daily_run.py --portfolio my_portfolio.csv --cash 100 --time 09:00
+python main.py schedule --portfolio my_portfolio.csv --cash 100 --time 09:00
 ```
 
 ### Background execution
@@ -169,7 +169,7 @@ python daily_run.py --portfolio my_portfolio.csv --cash 100 --time 09:00
 Keep the scheduler running even after you close the terminal:
 
 ```bash
-nohup python daily_run.py --portfolio my_portfolio.csv --cash 100 --time 09:00 &
+nohup python main.py schedule --portfolio my_portfolio.csv --cash 100 --time 09:00 &
 ```
 
 ### Cron example
@@ -177,7 +177,7 @@ nohup python daily_run.py --portfolio my_portfolio.csv --cash 100 --time 09:00 &
 Add this to your crontab to start at boot:
 
 ```
-@reboot /usr/bin/python /path/to/daily_run.py --portfolio /path/to/my_portfolio.csv --cash 100 --time 09:00 >> /path/to/trade.log 2>&1
+@reboot /usr/bin/python /path/to/main.py schedule --portfolio /path/to/my_portfolio.csv --cash 100 --time 09:00 >> /path/to/trade.log 2>&1
 ```
 
 ## Disclaimer

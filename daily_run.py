@@ -1,18 +1,14 @@
 import argparse
-import subprocess
 import time
-from pathlib import Path
+
+from src import trading
 
 import schedule
 
 
 def run_trading_script(portfolio: str, cash: float) -> None:
-    """Execute Trading_Script.py with the given arguments."""
-    script = Path(__file__).parent / "Scripts and CSV Files" / "Trading_Script.py"
-    subprocess.run(
-        ["python", str(script), "--portfolio", portfolio, "--cash", str(cash)],
-        check=True,
-    )
+    """Execute trading logic for ``portfolio`` using ``cash``."""
+    trading.run(portfolio, cash, "config.yaml")
 
 
 def build_daily_scheduler(

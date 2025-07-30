@@ -1,13 +1,19 @@
+from pathlib import Path
+
 import pandas as pd
 import matplotlib.pyplot as plt
 import yfinance as yf
 
 
-def generate_graph(save_path=None, show=True):
+BASE_DIR = Path(__file__).resolve().parents[1]
+
+
+def generate_graph(save_path: str | None = None, show: bool = True) -> None:
     """Generate the performance graph and optionally save it."""
 
     # === Load and prepare ChatGPT portfolio ===
-    chatgpt_df = pd.read_csv("Scripts and CSV files/chatgpt_portfolio_update.csv")
+    portfolio_file = BASE_DIR / "Scripts and CSV Files" / "chatgpt_portfolio_update.csv"
+    chatgpt_df = pd.read_csv(portfolio_file)
     chatgpt_totals = chatgpt_df[chatgpt_df['Ticker'] == 'TOTAL'].copy()
     chatgpt_totals['Date'] = pd.to_datetime(chatgpt_totals['Date'])
 

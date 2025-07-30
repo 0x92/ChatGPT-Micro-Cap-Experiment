@@ -8,9 +8,14 @@ paper-trading endpoints are used.
 from __future__ import annotations
 
 import os
+from pathlib import Path
 from typing import Any, Dict, List
 
 import requests
+from dotenv import load_dotenv
+
+# Load .env from project root if present without overriding already-set vars
+load_dotenv(Path(__file__).resolve().parents[2] / '.env', override=False)
 
 # Environment variable names
 _API_KEY_ENV = "BROKER_API_KEY"

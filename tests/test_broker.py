@@ -1,4 +1,5 @@
 import pathlib
+from pathlib import Path
 import sys
 sys.path.append(str(pathlib.Path(__file__).resolve().parents[1]))
 
@@ -8,6 +9,8 @@ from unittest import mock
 
 import pytest
 
+import importlib
+import src.broker as broker
 from src.broker import place_order, get_account, list_positions
 
 
@@ -113,4 +116,19 @@ def test_list_positions_makes_request(monkeypatch):
     assert calls['url'] == 'http://example.com/v2/positions'
     assert calls['headers']['APCA-API-KEY-ID'] == 'key'
     assert result[0]['symbol'] == 'AAA'
+
+
+def test_dotenv_loaded(monkeypatch):
+    recorded = {}
+
+    def fake(path, override=False):
+        recorded['path'] = Path(path)
+        recorded['override'] = override
+
+    monkeypatch.setattr('dotenv.load_dotenv', fake)
+    importlib.reload(broker)
+
+    expected = Path(broker.__file__).resolve().parents[2] / '.env'
+    assert recorded['path'] == expected
+    assert recorded['override'] is False
 

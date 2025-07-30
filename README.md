@@ -69,14 +69,14 @@ python3 -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
 ```
-Set up access to your brokerage API by exporting credentials before running the scripts:
+Set up access to your brokerage API by either exporting credentials or creating a `.env` file.
+A sample `.env` is provided and automatically loaded when the `src.broker` module is imported:
 ```bash
-export BROKER_API_KEY="<your-key>"
-export BROKER_SECRET_KEY="<your-secret>"
-# Optional: point to a different paper trading base URL
-export BROKER_BASE_URL="https://paper-api.alpaca.markets"
+BROKER_API_KEY=PKPE1ONZT041NZMFQ82G
+BROKER_SECRET_KEY=eWIrbJdu5rW0ApiZvlYE25AmxwkrVrMYIsqbDlyh
+BROKER_BASE_URL=https://paper-api.alpaca.markets
 ```
-This project uses the paper trading API only, so no real money is automatically traded.
+Environment variables take precedence over values in the file. This project uses the paper trading API only, so no real money is automatically traded.
 
 The `src.broker` module now exposes helper functions to interact with the
 Alpaca paper API. Use `place_order` to submit trades, `get_account` to fetch

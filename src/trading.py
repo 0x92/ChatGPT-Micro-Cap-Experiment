@@ -1,0 +1,116 @@
+"""Trading script logic runnable as a module."""
+from __future__ import annotations
+
+import argparse
+import json
+from datetime import datetime
+from pathlib import Path
+from typing import Iterable
+
+import pandas as pd
+import yaml
+
+from .portfolio import Portfolio
+from .generate_graph import generate_graph
+from .cache import get_price_data
+
+# Location of status json relative to project root
+STATUS_FILE = Path(__file__).resolve().parents[1] / "bot_status.json"
+
+
+def _write_status(action: str, file: Path = STATUS_FILE) -> None:
+    """Write the last action message to ``file``."""
+    data = {"last_action": action, "time": datetime.utcnow().isoformat()}
+    with file.open("w") as f:
+        json.dump(data, f)
+
+
+def load_config(path: str) -> dict:
+    """Load YAML or JSON configuration file."""
+    with open(path, "r") as f:
+        if path.endswith(".json"):
+            return json.load(f)
+        return yaml.safe_load(f)
+
+
+def daily_results(chatgpt_portfolio: Iterable[dict] | pd.DataFrame,
+                  extra_tickers: Iterable[str],
+                  today: str) -> None:
+    """Print daily price information for tickers."""
+    if isinstance(chatgpt_portfolio, pd.DataFrame):
+        chatgpt_portfolio = chatgpt_portfolio.to_dict(orient="records")
+    print(f"prices and updates for {today}")
+    for stock in list(chatgpt_portfolio) + [{"ticker": t} for t in extra_tickers]:
+        ticker = stock["ticker"]
+        data = get_price_data(ticker, period="2d", date=today)
+        price = float(data["Close"].iloc[-1])
+        last_price = float(data["Close"].iloc[-2])
+        percent_change = ((price - last_price) / last_price) * 100
+        volume = float(data["Volume"].iloc[-1])
+        print(f"{ticker} closing price: {price:.2f}")
+        print(f"{ticker} volume for today: ${volume:,}")
+        print(f"percent change from the day before: {percent_change:.2f}%")
+
+    chatgpt_df = pd.read_csv("Scripts and CSV Files/chatgpt_portfolio_update.csv")
+    chatgpt_totals = chatgpt_df[chatgpt_df["Ticker"] == "TOTAL"].copy()
+    chatgpt_totals["Date"] = pd.to_datetime(chatgpt_totals["Date"])
+    final_date = chatgpt_totals["Date"].max()
+    final_equity = chatgpt_totals.loc[chatgpt_totals["Date"] == final_date, "Total Equity"].iloc[0]
+    print(f"Latest ChatGPT Equity: ${final_equity:.2f}")
+
+    russell = get_price_data(
+        "^RUT",
+        date=today,
+        start="2025-06-27",
+        end=final_date + pd.Timedelta(days=1),
+    ).reset_index()[["Date", "Close"]]
+
+    initial_price = russell["Close"].iloc[0]
+    price_now = russell["Close"].iloc[-1]
+    scaling_factor = 100 / initial_price
+    russell_value = price_now * scaling_factor
+    print(f"$100 Invested in the Russell 2000 Index: ${russell_value:.2f}")
+    print(f"today's portfolio: {chatgpt_portfolio}")
+
+
+def run(portfolio_path: str, cash: float | None, config_path: str, *, today: str | None = None) -> None:
+    """Execute the trading logic."""
+    today = today or datetime.today().strftime("%Y-%m-%d")
+
+    config = load_config(config_path)
+    cash = cash if cash is not None else config.get("default_cash", 0.0)
+    extra_tickers = config.get("extra_tickers", ["^RUT", "IWO", "XBI"])
+    default_stop = config.get("default_stop_loss")
+
+    portfolio_df = pd.read_csv(portfolio_path)
+    if default_stop is not None:
+        if "stop_loss" not in portfolio_df.columns:
+            portfolio_df["stop_loss"] = default_stop
+        else:
+            portfolio_df["stop_loss"].fillna(default_stop, inplace=True)
+
+    portfolio = Portfolio(today=today)
+    portfolio.process(portfolio_df, cash)
+    daily_results(portfolio_df, extra_tickers, today)
+
+    graphs_dir = Path("graphs")
+    graphs_dir.mkdir(exist_ok=True)
+    graph_file = graphs_dir / f"performance_{today}.png"
+    generate_graph(graph_file.as_posix(), show=False)
+    _write_status("trading script executed")
+
+
+def main(argv: Iterable[str] | None = None) -> None:
+    parser = argparse.ArgumentParser(description="Process portfolio updates")
+    parser.add_argument("--portfolio", required=True,
+                        help="CSV with columns ticker, shares, stop_loss, buy_price")
+    parser.add_argument("--cash", type=float, help="Starting cash value")
+    parser.add_argument("--config", default="config.yaml",
+                        help="Path to YAML/JSON configuration file")
+    args = parser.parse_args(list(argv) if argv is not None else None)
+
+    run(args.portfolio, args.cash, args.config)
+
+
+if __name__ == "__main__":
+    main()

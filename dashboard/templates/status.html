@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Bot Status</h1>
+<p>Last action: <span id="last-action">{{ status.last_action or '' }}</span></p>
+<p>Equity: $<span id="equity">{{ status.equity }}</span></p>
+<h3>Positions</h3>
+<table class="table table-striped">
+  <thead><tr><th>Symbol</th><th>Qty</th><th>Market Value</th></tr></thead>
+  <tbody id="positions-body">
+  {% for p in status.positions %}
+    <tr><td>{{ p['symbol'] }}</td><td>{{ p['qty'] }}</td><td>{{ p['market_value'] }}</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+<h3>Open Orders</h3>
+<table class="table table-striped">
+  <thead><tr><th>ID</th><th>Symbol</th><th>Qty</th><th>Side</th></tr></thead>
+  <tbody id="orders-body">
+  {% for o in status.orders %}
+    <tr><td>{{ o['id'] }}</td><td>{{ o['symbol'] }}</td><td>{{ o['qty'] }}</td><td>{{ o['side'] }}</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+<script>
+async function refresh(){
+  const res = await fetch('{{ url_for('show_status') }}?json=1');
+  if(!res.ok) return;
+  const data = await res.json();
+  document.getElementById('last-action').textContent = data.last_action || '';
+  document.getElementById('equity').textContent = data.equity;
+  const posBody = document.getElementById('positions-body');
+  posBody.innerHTML = '';
+  for (const p of data.positions){
+    posBody.insertAdjacentHTML('beforeend', `<tr><td>${p.symbol||p.symbol}</td><td>${p.qty}</td><td>${p.market_value}</td></tr>`);
+  }
+  const ordBody = document.getElementById('orders-body');
+  ordBody.innerHTML = '';
+  for (const o of data.orders){
+    ordBody.insertAdjacentHTML('beforeend', `<tr><td>${o.id}</td><td>${o.symbol}</td><td>${o.qty}</td><td>${o.side}</td></tr>`);
+  }
+}
+setInterval(refresh, 5000);
+</script>
+{% endblock %}

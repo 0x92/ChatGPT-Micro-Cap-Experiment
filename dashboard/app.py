@@ -1,11 +1,14 @@
-from flask import Flask, send_file, render_template, url_for
+from flask import Flask, send_file, render_template, url_for, jsonify, request
 import pandas as pd
 from pathlib import Path
 import sys
 
+from src import bot_status
+
 BASE_DIR = Path(__file__).resolve().parents[1]
 CSV_DIR = BASE_DIR / "Scripts and CSV Files"
 GRAPH_DIR = BASE_DIR / "graphs"
+BOT_STATUS_FILE = BASE_DIR / "bot_status.json"
 
 sys.path.append(str(CSV_DIR))
 from Generate_Graph import generate_graph
@@ -89,6 +92,15 @@ def overview():
         cash=latest["Cash Balance"],
         equity=latest["Total Equity"],
     )
+
+
+@app.route("/status")
+def show_status():
+    """Display live account status."""
+    status = bot_status.get_status(BOT_STATUS_FILE)
+    if request.args.get("json"):
+        return jsonify(status)
+    return render_template("status.html", status=status)
 
 if __name__ == "__main__":
     app.run(debug=True)

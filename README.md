@@ -138,13 +138,16 @@ python "Scripts and CSV Files/Trading_Script.py" --portfolio my_portfolio.csv --
 
 ## Dashboard
 
-Start the Flask dashboard to view the portfolio, trade log, and latest graph:
+Start the Flask dashboard to view the portfolio, trade log, performance graph,
+and a quick summary of the latest totals:
 
 ```bash
 python dashboard/app.py
 ```
 
-Visit `http://localhost:5000/` in your browser.
+Visit `http://localhost:5000/` in your browser. Use the navigation links at the
+top of the page to switch between the Portfolio, Trade Log, Graph, and Summary
+views.
 
 ## Automating Daily Runs
 

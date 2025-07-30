@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Manual Sell</h1>
+<form method="post" class="space-y-4">
+  <div>
+    <label class="block">Ticker</label>
+    <input type="text" name="ticker" class="border px-2 py-1" required>
+  </div>
+  <div>
+    <label class="block">Shares</label>
+    <input type="number" name="shares" class="border px-2 py-1" required>
+  </div>
+  <div>
+    <label class="block">Price</label>
+    <input type="text" name="price" class="border px-2 py-1" required>
+  </div>
+  <button type="submit" class="bg-blue-500 text-white px-4 py-2">Submit</button>
+</form>
+{% endblock %}

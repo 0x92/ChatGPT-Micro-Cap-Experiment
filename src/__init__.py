@@ -7,4 +7,5 @@ __all__ = [
     "trading",
     "generate_graph",
     "cache",
+    "notifications",
 ]

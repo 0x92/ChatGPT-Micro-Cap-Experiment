@@ -14,6 +14,14 @@
     <label class="block">Extra Tickers (comma separated)</label>
     <input type="text" name="extra_tickers" value="{{ config.extra_tickers|join(',') }}" class="border px-2 py-1 w-full">
   </div>
+  <div>
+    <label class="block">Notification Email</label>
+    <input type="text" name="email" value="{{ config.email }}" class="border px-2 py-1 w-full">
+  </div>
+  <div>
+    <label class="block">Webhook URL</label>
+    <input type="text" name="webhook_url" value="{{ config.webhook_url }}" class="border px-2 py-1 w-full">
+  </div>
   <h2 class="font-semibold">Broker Settings (optional)</h2>
   <div>
     <label class="block">BROKER_API_KEY</label>

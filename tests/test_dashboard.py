@@ -72,17 +72,42 @@ def test_status_route(tmp_path, monkeypatch):
 def test_config_route_get_post(tmp_path, monkeypatch):
     csv_dir, graph_dir, audit_file = _setup_files(tmp_path)
     cfg_file = tmp_path / "config.yaml"
-    cfg_file.write_text("default_cash: 50\ndefault_stop_loss: 0.1\nextra_tickers:\n- AAA\n")
+    cfg_file.write_text(
+        "default_cash: 50\n"
+        "default_stop_loss: 0.1\n"
+        "extra_tickers:\n- AAA\n"
+        "email: old@example.com\n"
+        "webhook_url: http://oldwebhook\n"
+    )
     env_file = tmp_path / ".env"
-    env_file.write_text("BROKER_API_KEY=old\n")
+    env_file.write_text(
+        "BROKER_API_KEY=old\nDASHBOARD_USERNAME=user\nDASHBOARD_PASSWORD=pass\n"
+    )
 
     monkeypatch.setattr(app_module, "CSV_DIR", csv_dir)
     monkeypatch.setattr(app_module, "GRAPH_DIR", graph_dir)
     monkeypatch.setattr(app_module, "CONFIG_FILE", cfg_file)
     monkeypatch.setattr(app_module, "ENV_FILE", env_file)
+
     monkeypatch.setattr(app_module.audit, "LOG_FILE", audit_file)
 
+    import dashboard.auth as auth_module
+    monkeypatch.setattr(auth_module, "ENV_FILE", env_file)
+
+
     with app.test_client() as client:
+        resp = client.get("/config")
+        assert resp.status_code == 302
+        # follow redirect to login page
+        login_page = client.get("/login")
+        assert login_page.status_code == 200
+
+        client.post(
+            "/login",
+            data={"username": "user", "password": "pass"},
+            follow_redirects=True,
+        )
+
         resp = client.get("/config")
         assert resp.status_code == 200
 
@@ -92,6 +117,8 @@ def test_config_route_get_post(tmp_path, monkeypatch):
                 "default_cash": "75",
                 "default_stop_loss": "0.2",
                 "extra_tickers": "BBB,CCC",
+                "email": "new@example.com",
+                "webhook_url": "http://webhook",
                 "BROKER_API_KEY": "newkey",
                 "BROKER_SECRET_KEY": "secret",
                 "BROKER_BASE_URL": "http://example.com",
@@ -106,6 +133,8 @@ def test_config_route_get_post(tmp_path, monkeypatch):
     assert cfg["default_cash"] == 75.0
     assert cfg["default_stop_loss"] == 0.2
     assert cfg["extra_tickers"] == ["BBB", "CCC"]
+    assert cfg["email"] == "new@example.com"
+    assert cfg["webhook_url"] == "http://webhook"
 
     env_vals = dotenv_values(env_file)
     assert env_vals["BROKER_API_KEY"] == "newkey"
@@ -115,5 +144,49 @@ def test_config_route_get_post(tmp_path, monkeypatch):
     import json
     entries = [json.loads(l) for l in audit_file.read_text().splitlines() if l]
     assert entries[-1]["action"] == "config_update"
+
+
+def test_scheduler_route(tmp_path, monkeypatch):
+    csv_dir, graph_dir = _setup_files(tmp_path)
+    cfg_file = tmp_path / "config.yaml"
+    cfg_file.write_text("")
+
+    monkeypatch.setattr(app_module, "CSV_DIR", csv_dir)
+    monkeypatch.setattr(app_module, "GRAPH_DIR", graph_dir)
+    monkeypatch.setattr(app_module, "CONFIG_FILE", cfg_file)
+
+    started = {}
+
+    def fake_restart(time):
+        started["time"] = time
+
+    monkeypatch.setattr(app_module, "restart_scheduler", fake_restart)
+
+    with app.test_client() as client:
+        resp = client.post("/scheduler", data={"run_time": "10:30"})
+        assert resp.status_code == 302
+
+    import yaml
+
+    cfg = yaml.safe_load(cfg_file.read_text())
+    assert cfg["run_time"] == "10:30"
+    assert started["time"] == "10:30"
+
+def test_portfolio_edit(tmp_path, monkeypatch):
+    csv_dir, graph_dir = _setup_files(tmp_path)
+    monkeypatch.setattr(app_module, "CSV_DIR", csv_dir)
+
+    with app.test_client() as client:
+        resp = client.get("/portfolio/edit")
+        assert resp.status_code == 200
+
+        new_csv = "Date,Ticker,Total Value\n2025-08-11,TOTAL,150\n"
+        resp = client.post("/portfolio/edit", data={"csv_text": new_csv})
+        assert resp.status_code == 200
+
+    saved = csv_dir / "chatgpt_portfolio_update.csv"
+    assert "150" in saved.read_text()
+    backups = list((csv_dir / "backups").glob("chatgpt_portfolio_update_*.csv"))
+    assert len(backups) == 1
 
 

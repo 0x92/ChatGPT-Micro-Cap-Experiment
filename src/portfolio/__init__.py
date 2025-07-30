@@ -10,6 +10,7 @@ from typing import List, Dict, Any
 import pandas as pd
 import yfinance as yf
 from ..broker import place_order
+from ..notifications import send_notification
 
 
 class Portfolio:
@@ -147,6 +148,10 @@ class Portfolio:
             df = pd.DataFrame([log])
         df.to_csv(file, index=False)
 
+        send_notification(
+            f"Sold {shares} shares of {ticker} at {price} (PnL: {pnl:.2f}). Reason: {reason}"
+        )
+
     def log_manual_buy(
         self,
         buy_price: float,
@@ -193,6 +198,10 @@ class Portfolio:
             record_change("manual", "trade_buy", log)
         except Exception:
             pass
+
+        send_notification(
+            f"Bought {shares} shares of {ticker} at {buy_price}."
+        )
 
         new_trade = {
             "ticker": ticker,
@@ -272,6 +281,9 @@ class Portfolio:
             )
 
         cash = cash + shares_sold * sell_price
+        send_notification(
+            f"Sold {shares_sold} shares of {ticker} at {sell_price} (PnL: {pnl:.2f})."
+        )
         return cash, chatgpt_portfolio
 
     def paper_buy(self, ticker: str, qty: int, order_type: str = "market"):

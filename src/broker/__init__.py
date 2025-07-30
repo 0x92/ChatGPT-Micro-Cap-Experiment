@@ -8,7 +8,7 @@ paper-trading endpoints are used.
 from __future__ import annotations
 
 import os
-from typing import Any, Dict
+from typing import Any, Dict, List
 
 import requests
 
@@ -68,5 +68,21 @@ def place_order(symbol: str, qty: int, side: str, order_type: str = "market", ti
         "time_in_force": time_in_force,
     }
     response = requests.post(url, json=payload, headers=_get_headers(), timeout=10)
+    response.raise_for_status()
+    return response.json()
+
+
+def get_account() -> Dict[str, Any]:
+    """Return account information from the brokerage API."""
+    url = f"{_base_url()}/v2/account"
+    response = requests.get(url, headers=_get_headers(), timeout=10)
+    response.raise_for_status()
+    return response.json()
+
+
+def list_positions() -> List[Dict[str, Any]]:
+    """Return open positions from the brokerage API."""
+    url = f"{_base_url()}/v2/positions"
+    response = requests.get(url, headers=_get_headers(), timeout=10)
     response.raise_for_status()
     return response.json()

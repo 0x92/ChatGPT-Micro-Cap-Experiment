@@ -78,6 +78,10 @@ export BROKER_BASE_URL="https://paper-api.alpaca.markets"
 ```
 This project uses the paper trading API only, so no real money is automatically traded.
 
+The `src.broker` module now exposes helper functions to interact with the
+Alpaca paper API. Use `place_order` to submit trades, `get_account` to fetch
+account details and `list_positions` to inspect open positions.
+
 
 # Follow Along
 The experiment runs June 2025 to December 2025.

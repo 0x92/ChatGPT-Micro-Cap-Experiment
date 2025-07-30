@@ -23,6 +23,10 @@ from datetime import datetime
 
 
 
+import json
+from . import audit
+from .audit import record_change
+
 from src import bot_status
 from src.generate_graph import generate_graph
 from src.portfolio import Portfolio
@@ -238,6 +242,12 @@ def config_page():
             for k, v in env_vals.items():
                 f.write(f"{k}={v}\n")
 
+        record_change(
+            user=request.remote_addr or "unknown",
+            action="config_update",
+            details={"config": config_data}
+        )
+
         return redirect(url_for("config_page"))
 
     cfg = {}
@@ -393,6 +403,44 @@ def show_status():
         return jsonify(status)
     return render_template("status.html", status=status)
 
+
+
+
+@app.route("/audit")
+def show_audit():
+    """Display the audit log entries."""
+    log_entries = []
+    if audit.LOG_FILE.exists():
+        with audit.LOG_FILE.open() as f:
+            for line in f:
+                try:
+                    log_entries.append(json.loads(line))
+                except json.JSONDecodeError:
+                    continue
+    return render_template("audit.html", entries=log_entries)
+
+@app.route("/portfolio/edit", methods=["POST"])
+@login_required
+def edit_portfolio():
+    return "Not implemented", 501
+
+
+@app.route("/manual_buy", methods=["POST"])
+@login_required
+def manual_buy():
+    return "Not implemented", 501
+
+
+@app.route("/manual_sell", methods=["POST"])
+@login_required
+def manual_sell():
+    return "Not implemented", 501
+
+
+@app.route("/scheduler", methods=["POST"])
+@login_required
+def scheduler():
+    return "Not implemented", 501
 
 
 if __name__ == "__main__":

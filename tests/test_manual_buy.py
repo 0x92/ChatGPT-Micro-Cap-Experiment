@@ -7,6 +7,8 @@ sys.path.append(str(pathlib.Path(__file__).resolve().parents[1]))
 
 from src import portfolio as portfolio_module
 from src.portfolio import Portfolio
+import dashboard.audit as audit_module
+import json
 
 
 def test_log_manual_buy_creates_entry(tmp_path, monkeypatch):
@@ -20,6 +22,9 @@ def test_log_manual_buy_creates_entry(tmp_path, monkeypatch):
     work.mkdir()
     (work / "Scripts and CSV Files").mkdir()
     monkeypatch.chdir(work)
+    audit_file = work / "audit.log"
+    audit_file.write_text("")
+    monkeypatch.setattr(audit_module, "LOG_FILE", audit_file)
 
     cash, pf = portfolio_obj.log_manual_buy(
         buy_price=10.0,
@@ -39,4 +44,6 @@ def test_log_manual_buy_creates_entry(tmp_path, monkeypatch):
     assert cash == pytest.approx(50.0)
     assert pf.iloc[0]["ticker"] == "AAA"
     assert int(pf.iloc[0]["shares"]) == 5
+    entries = [json.loads(l) for l in audit_file.read_text().splitlines() if l]
+    assert entries[-1]["action"] == "trade_buy"
 

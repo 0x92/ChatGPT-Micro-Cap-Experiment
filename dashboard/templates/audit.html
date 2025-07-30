@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Audit Log</h1>
+<table class="table table-striped">
+  <thead>
+    <tr>
+      <th>Timestamp</th>
+      <th>User</th>
+      <th>Action</th>
+      <th>Details</th>
+    </tr>
+  </thead>
+  <tbody>
+  {% for e in entries %}
+    <tr>
+      <td>{{ e.timestamp }}</td>
+      <td>{{ e.user }}</td>
+      <td>{{ e.action }}</td>
+      <td>{{ e.details }}</td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

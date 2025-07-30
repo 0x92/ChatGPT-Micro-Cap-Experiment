@@ -1,0 +1,5 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Performance Graph</h1>
+<img src="{{ url_for('graph_image') }}" alt="Performance graph" class="img-fluid">
+{% endblock %}

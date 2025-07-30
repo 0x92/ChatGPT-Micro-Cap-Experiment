@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Dashboard Overview</h1>
+<div class="row">
+  <div class="col-md-6">
+    <img src="{{ url_for('graph_image') }}" alt="Performance graph" class="img-fluid">
+  </div>
+  <div class="col-md-6">
+    <h2>Account Summary ({{ date }})</h2>
+    <ul>
+      <li>Total Value: {{ total }}</li>
+      <li>PnL: {{ pnl }}</li>
+      <li>Cash Balance: {{ cash }}</li>
+      <li>Total Equity: {{ equity }}</li>
+    </ul>
+  </div>
+</div>
+{% endblock %}

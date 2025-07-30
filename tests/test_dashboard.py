@@ -37,4 +37,6 @@ def test_dashboard_routes(tmp_path, monkeypatch):
         assert client.get("/log").status_code == 200
         assert client.get("/summary").status_code == 200
         assert client.get("/graph_image").status_code == 200
+        assert client.get("/overview").status_code == 200
+
 

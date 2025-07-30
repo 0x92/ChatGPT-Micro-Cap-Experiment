@@ -5,6 +5,8 @@ import os
 import argparse
 from pathlib import Path
 import sys
+import json
+import yaml
 
 from src.portfolio import Portfolio
 
@@ -13,16 +15,24 @@ sys.path.append("Scripts and CSV Files")
 from Generate_Graph import generate_graph
 
 
+def load_config(path: str) -> dict:
+    """Load YAML or JSON configuration file."""
+    with open(path, "r") as f:
+        if path.endswith(".json"):
+            return json.load(f)
+        return yaml.safe_load(f)
+
+
 
 # This is where chatGPT gets daily updates from
 # I give it data on its portfolio and also other tickers if requested
 # Right now it additionally wants "^RUT", "IWO", and "XBI"
 
-def daily_results(chatgpt_portfolio):
+def daily_results(chatgpt_portfolio, extra_tickers):
     if isinstance(chatgpt_portfolio, pd.DataFrame):
             chatgpt_portfolio = chatgpt_portfolio.to_dict(orient="records")
     print(f"prices and updates for {today}")
-    for stock in chatgpt_portfolio + [{"ticker": "^RUT"}] + [{"ticker": "IWO"}] + [{"ticker": "XBI"}]:
+    for stock in chatgpt_portfolio + [{"ticker": t} for t in extra_tickers]:
         ticker = stock['ticker']
         try:
             data = yf.download(ticker, period="2d", progress=False)
@@ -71,17 +81,32 @@ def main():
     )
     parser.add_argument(
         "--cash",
-        required=True,
         type=float,
-        help="Starting cash value",
+        help="Starting cash value (overrides config)",
+    )
+    parser.add_argument(
+        "--config",
+        default="config.yaml",
+        help="Path to YAML/JSON configuration file",
     )
 
     args = parser.parse_args()
 
+    config = load_config(args.config)
+    cash = args.cash if args.cash is not None else config.get("default_cash", 0.0)
+    extra_tickers = config.get("extra_tickers", ["^RUT", "IWO", "XBI"])
+    default_stop = config.get("default_stop_loss")
+
     portfolio_df = pd.read_csv(args.portfolio)
+    if default_stop is not None:
+        if "stop_loss" not in portfolio_df.columns:
+            portfolio_df["stop_loss"] = default_stop
+        else:
+            portfolio_df["stop_loss"].fillna(default_stop, inplace=True)
+
     portfolio = Portfolio(today=today)
-    portfolio.process(portfolio_df, args.cash)
-    daily_results(portfolio_df)
+    portfolio.process(portfolio_df, cash)
+    daily_results(portfolio_df, extra_tickers)
 
     graphs_dir = Path("graphs")
     graphs_dir.mkdir(exist_ok=True)

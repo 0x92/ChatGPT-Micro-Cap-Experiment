@@ -1,0 +1,11 @@
+# Default trading configuration
+# Numeric values may be customized.
+
+default_cash: 100.0
+# default stop loss percentage from purchase price (e.g., 0.05 = 5%)
+default_stop_loss: 0.05
+# list of additional tickers to fetch stats for in daily_results
+extra_tickers:
+  - "^RUT"
+  - "IWO"
+  - "XBI"

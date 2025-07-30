@@ -9,3 +9,5 @@ requests
 schedule
 PyYAML
 python-dotenv
+
+Flask-Login

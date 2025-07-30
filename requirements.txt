@@ -8,3 +8,4 @@ Flask
 requests
 schedule
 PyYAML
+python-dotenv

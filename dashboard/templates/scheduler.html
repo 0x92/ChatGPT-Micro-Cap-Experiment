@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Scheduler</h1>
+<form method="post" class="space-y-4">
+  <div>
+    <label class="block">Daily Run Time (HH:MM)</label>
+    <input type="text" name="run_time" value="{{ run_time }}" class="border px-2 py-1">
+  </div>
+  <button type="submit" class="bg-blue-500 text-white px-4 py-2">Save</button>
+</form>
+{% endblock %}

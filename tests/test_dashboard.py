@@ -69,14 +69,30 @@ def test_config_route_get_post(tmp_path, monkeypatch):
     cfg_file = tmp_path / "config.yaml"
     cfg_file.write_text("default_cash: 50\ndefault_stop_loss: 0.1\nextra_tickers:\n- AAA\n")
     env_file = tmp_path / ".env"
-    env_file.write_text("BROKER_API_KEY=old\n")
+    env_file.write_text(
+        "BROKER_API_KEY=old\nDASHBOARD_USERNAME=user\nDASHBOARD_PASSWORD=pass\n"
+    )
 
     monkeypatch.setattr(app_module, "CSV_DIR", csv_dir)
     monkeypatch.setattr(app_module, "GRAPH_DIR", graph_dir)
     monkeypatch.setattr(app_module, "CONFIG_FILE", cfg_file)
     monkeypatch.setattr(app_module, "ENV_FILE", env_file)
+    import dashboard.auth as auth_module
+    monkeypatch.setattr(auth_module, "ENV_FILE", env_file)
 
     with app.test_client() as client:
+        resp = client.get("/config")
+        assert resp.status_code == 302
+        # follow redirect to login page
+        login_page = client.get("/login")
+        assert login_page.status_code == 200
+
+        client.post(
+            "/login",
+            data={"username": "user", "password": "pass"},
+            follow_redirects=True,
+        )
+
         resp = client.get("/config")
         assert resp.status_code == 200
 

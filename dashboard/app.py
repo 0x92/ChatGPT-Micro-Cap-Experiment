@@ -1,8 +1,19 @@
-from flask import Flask, send_file, render_template, url_for, jsonify, request, redirect
+from flask import (
+    Flask,
+    send_file,
+    render_template,
+    url_for,
+    jsonify,
+    request,
+    redirect,
+)
 import pandas as pd
 import yaml
 from dotenv import dotenv_values
 from pathlib import Path
+from flask_login import login_required
+
+from .auth import auth_bp, login_manager
 
 from src import bot_status
 from src.generate_graph import generate_graph
@@ -16,6 +27,10 @@ ENV_FILE = BASE_DIR / ".env"
 
 TEMPLATE_DIR = Path(__file__).resolve().parent / "templates"
 app = Flask(__name__, template_folder=TEMPLATE_DIR)
+app.secret_key = "devkey"
+
+login_manager.init_app(app)
+app.register_blueprint(auth_bp)
 
 
 @app.route("/")
@@ -96,6 +111,7 @@ def overview():
 
 
 @app.route("/config", methods=["GET", "POST"])
+@login_required
 def config_page():
     """Display and update configuration settings."""
     if request.method == "POST":
@@ -142,6 +158,30 @@ def show_status():
     if request.args.get("json"):
         return jsonify(status)
     return render_template("status.html", status=status)
+
+
+@app.route("/portfolio/edit", methods=["POST"])
+@login_required
+def edit_portfolio():
+    return "Not implemented", 501
+
+
+@app.route("/manual_buy", methods=["POST"])
+@login_required
+def manual_buy():
+    return "Not implemented", 501
+
+
+@app.route("/manual_sell", methods=["POST"])
+@login_required
+def manual_sell():
+    return "Not implemented", 501
+
+
+@app.route("/scheduler", methods=["POST"])
+@login_required
+def scheduler():
+    return "Not implemented", 501
 
 if __name__ == "__main__":
     app.run(debug=True)

@@ -43,10 +43,10 @@ def daily_results(chatgpt_portfolio: Iterable[dict] | pd.DataFrame,
     for stock in list(chatgpt_portfolio) + [{"ticker": t} for t in extra_tickers]:
         ticker = stock["ticker"]
         data = get_price_data(ticker, period="2d", date=today)
-        price = float(data["Close"].iloc[-1])
-        last_price = float(data["Close"].iloc[-2])
+        price = float(data["Close"].iloc[-1:].squeeze())
+        last_price = float(data["Close"].iloc[-2:].squeeze())
         percent_change = ((price - last_price) / last_price) * 100
-        volume = float(data["Volume"].iloc[-1])
+        volume = float(data["Volume"].iloc[-1:].squeeze())
         print(f"{ticker} closing price: {price:.2f}")
         print(f"{ticker} volume for today: ${volume:,}")
         print(f"percent change from the day before: {percent_change:.2f}%")
@@ -65,8 +65,8 @@ def daily_results(chatgpt_portfolio: Iterable[dict] | pd.DataFrame,
         end=final_date + pd.Timedelta(days=1),
     ).reset_index()[["Date", "Close"]]
 
-    initial_price = russell["Close"].iloc[0]
-    price_now = russell["Close"].iloc[-1]
+    initial_price = float(russell["Close"].iloc[0:].squeeze())
+    price_now = float(russell["Close"].iloc[-1:].squeeze())
     scaling_factor = 100 / initial_price
     russell_value = price_now * scaling_factor
     print(f"$100 Invested in the Russell 2000 Index: ${russell_value:.2f}")

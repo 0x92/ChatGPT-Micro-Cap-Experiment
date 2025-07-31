@@ -63,10 +63,15 @@ def daily_results(chatgpt_portfolio: Iterable[dict] | pd.DataFrame,
         date=today,
         start="2025-06-27",
         end=final_date + pd.Timedelta(days=1),
-    ).reset_index()[["Date", "Close"]]
+    ).reset_index()
 
-    initial_price = russell["Close"].iloc[0]
-    price_now = russell["Close"].iloc[-1]
+    if isinstance(russell.columns, pd.MultiIndex):
+        russell.columns = russell.columns.get_level_values(0)
+
+    russell = russell[["Date", "Close"]]
+
+    initial_price = float(russell["Close"].iloc[0])
+    price_now = float(russell["Close"].iloc[-1])
     scaling_factor = 100 / initial_price
     russell_value = price_now * scaling_factor
     print(f"$100 Invested in the Russell 2000 Index: ${russell_value:.2f}")

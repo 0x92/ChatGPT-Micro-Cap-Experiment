@@ -1,3 +1,4 @@
 # Ignore environment variables
 .env
 __pycache__/
+dashboard/audit.log

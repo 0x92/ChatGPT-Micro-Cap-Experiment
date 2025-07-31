@@ -419,28 +419,6 @@ def show_audit():
                     continue
     return render_template("audit.html", entries=log_entries)
 
-@app.route("/portfolio/edit", methods=["POST"])
-@login_required
-def edit_portfolio():
-    return "Not implemented", 501
-
-
-@app.route("/manual_buy", methods=["POST"])
-@login_required
-def manual_buy():
-    return "Not implemented", 501
-
-
-@app.route("/manual_sell", methods=["POST"])
-@login_required
-def manual_sell():
-    return "Not implemented", 501
-
-
-@app.route("/scheduler", methods=["POST"])
-@login_required
-def scheduler():
-    return "Not implemented", 501
 
 
 if __name__ == "__main__":

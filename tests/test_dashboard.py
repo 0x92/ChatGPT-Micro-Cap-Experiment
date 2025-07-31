@@ -147,7 +147,7 @@ def test_config_route_get_post(tmp_path, monkeypatch):
 
 
 def test_scheduler_route(tmp_path, monkeypatch):
-    csv_dir, graph_dir = _setup_files(tmp_path)
+    csv_dir, graph_dir, audit_file = _setup_files(tmp_path)
     cfg_file = tmp_path / "config.yaml"
     cfg_file.write_text("")
 
@@ -173,7 +173,7 @@ def test_scheduler_route(tmp_path, monkeypatch):
     assert started["time"] == "10:30"
 
 def test_portfolio_edit(tmp_path, monkeypatch):
-    csv_dir, graph_dir = _setup_files(tmp_path)
+    csv_dir, graph_dir, audit_file = _setup_files(tmp_path)
     monkeypatch.setattr(app_module, "CSV_DIR", csv_dir)
 
     with app.test_client() as client:

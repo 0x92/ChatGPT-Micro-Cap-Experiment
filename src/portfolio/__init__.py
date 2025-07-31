@@ -44,6 +44,11 @@ class Portfolio:
             if old in portfolio.columns and new not in portfolio.columns:
                 portfolio = portfolio.rename(columns={old: new})
 
+        # Drop any summary rows or incomplete entries that may appear in the CSV
+        if "ticker" in portfolio.columns:
+            portfolio = portfolio[~portfolio["ticker"].astype(str).str.upper().eq("TOTAL")]
+        portfolio = portfolio.dropna(subset=["shares", "buy_price", "stop_loss"], how="any")
+
         tickers = portfolio["ticker"].tolist()
         price_map = asyncio.run(self._download_all(tickers))
 

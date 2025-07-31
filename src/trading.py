@@ -94,6 +94,16 @@ def run(portfolio_path: str, cash: float | None, config_path: str, *, today: str
     for old, new in rename_map.items():
         if old in portfolio_df.columns and new not in portfolio_df.columns:
             portfolio_df = portfolio_df.rename(columns={old: new})
+
+    # Derive missing buy price from cost basis and shares
+    if "buy_price" not in portfolio_df.columns and {
+        "cost_basis",
+        "shares",
+    }.issubset(portfolio_df.columns):
+        with pd.option_context("mode.chained_assignment", None):
+            portfolio_df["buy_price"] = portfolio_df["cost_basis"] / portfolio_df[
+                "shares"
+            ]
     if default_stop is not None:
         if "stop_loss" not in portfolio_df.columns:
             portfolio_df["stop_loss"] = default_stop

@@ -43,8 +43,17 @@ def daily_results(chatgpt_portfolio: Iterable[dict] | pd.DataFrame,
     for stock in list(chatgpt_portfolio) + [{"ticker": t} for t in extra_tickers]:
         ticker = stock["ticker"]
         data = get_price_data(ticker, period="2d", date=today)
-        price = float(data["Close"].iloc[-1:].squeeze())
-        last_price = float(data["Close"].iloc[-2:].squeeze())
+
+        # ``get_price_data`` may sometimes return fewer than two rows (for
+        # example around holidays or for recently listed tickers). Using
+        # ``iloc[-2:]`` followed by ``squeeze`` would return a Series when two
+        # rows are present which cannot be directly converted to ``float``.
+        close_prices = data["Close"].dropna()
+        price = float(close_prices.iloc[-1])
+        if len(close_prices) >= 2:
+            last_price = float(close_prices.iloc[-2])
+        else:
+            last_price = price
         percent_change = ((price - last_price) / last_price) * 100
         volume = float(data["Volume"].iloc[-1:].squeeze())
         print(f"{ticker} closing price: {price:.2f}")

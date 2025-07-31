@@ -65,8 +65,13 @@ def daily_results(chatgpt_portfolio: Iterable[dict] | pd.DataFrame,
         end=final_date + pd.Timedelta(days=1),
     ).reset_index()[["Date", "Close"]]
 
-    initial_price = float(russell["Close"].iloc[0:].squeeze())
-    price_now = float(russell["Close"].iloc[-1:].squeeze())
+    # ``russell`` is a DataFrame with a single ``Close`` column. To compute the
+    # value of $100 invested in the index, grab the first and last closing
+    # prices as scalar floats. Using ``iloc[0]`` and ``iloc[-1]`` avoids
+    # returning a single-element Series, which previously caused a
+    # ``TypeError`` when formatting the value.
+    initial_price = float(russell["Close"].iloc[0])
+    price_now = float(russell["Close"].iloc[-1])
     scaling_factor = 100 / initial_price
     russell_value = price_now * scaling_factor
     print(f"$100 Invested in the Russell 2000 Index: ${russell_value:.2f}")

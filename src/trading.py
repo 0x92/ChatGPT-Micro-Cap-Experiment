@@ -95,6 +95,12 @@ def run(portfolio_path: str, cash: float | None, config_path: str, *, today: str
         if old in portfolio_df.columns and new not in portfolio_df.columns:
             portfolio_df = portfolio_df.rename(columns={old: new})
 
+    # Remove summary rows like "TOTAL" and any rows missing share counts
+    if "ticker" in portfolio_df.columns:
+        portfolio_df = portfolio_df[~portfolio_df["ticker"].str.upper().eq("TOTAL")]
+    if "shares" in portfolio_df.columns:
+        portfolio_df = portfolio_df[portfolio_df["shares"].notna()]
+
     # Derive missing buy price from cost basis and shares
     if "buy_price" not in portfolio_df.columns and {
         "cost_basis",
@@ -108,7 +114,7 @@ def run(portfolio_path: str, cash: float | None, config_path: str, *, today: str
         if "stop_loss" not in portfolio_df.columns:
             portfolio_df["stop_loss"] = default_stop
         else:
-            portfolio_df["stop_loss"].fillna(default_stop, inplace=True)
+            portfolio_df["stop_loss"] = portfolio_df["stop_loss"].fillna(default_stop)
 
     portfolio = Portfolio(today=today)
     portfolio.process(portfolio_df, cash)
